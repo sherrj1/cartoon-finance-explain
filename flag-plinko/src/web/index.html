@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flag Plinko</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  canvas { position: absolute; left: 50%; top: 0; transform-origin: 0 0; image-rendering: auto; }
+  #err { position: fixed; left: 8px; top: 8px; color: #ff6b6b; font: 14px monospace; white-space: pre-wrap; z-index: 9; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<div id="err"></div>
+<script type="module" src="/src/web/main.js"></script>
+</body>
+</html>

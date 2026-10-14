@@ -1,0 +1,28 @@
+{
+  "channelName": "FLAG PLINKO",
+  "watermark": "@YourChannel  ·  Subscribe & comment your country!",
+  "gameMinutes": 180,
+  "seed": null,
+  "port": 8080,
+  "sound": { "enabled": true, "master": 0.8, "sfx": 0.7, "music": 0.25 },
+  "trails": false,
+  "stream": {
+    "rtmpUrl": "rtmp://a.rtmp.youtube.com/live2",
+    "streamKey": "",
+    "fps": 60,
+    "videoBitrate": "6000k",
+    "audio": "pulse",
+    "pulseSource": "flagplinko.monitor",
+    "output": null,
+    "chrome": null,
+    "schedule": []
+  },
+  "chat": {
+    "enabled": false,
+    "apiKey": "",
+    "videoId": "",
+    "liveChatId": "",
+    "oauthToken": "",
+    "highlightSeconds": 10
+  }
+}
