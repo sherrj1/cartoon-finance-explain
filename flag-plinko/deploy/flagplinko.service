@@ -1,0 +1,16 @@
+# systemd unit: keeps the stream running and restarts it if the whole process dies.
+# sudo cp deploy/flagplinko.service /etc/systemd/system/ && sudo systemctl enable --now flagplinko
+[Unit]
+Description=Flag Plinko livestream
+After=network-online.target
+
+[Service]
+User=streamer
+WorkingDirectory=/opt/flag-plinko
+ExecStart=/usr/bin/node run.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

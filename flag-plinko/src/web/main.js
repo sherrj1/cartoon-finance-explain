@@ -59,11 +59,14 @@ async function boot() {
   });
   game.on('results', () => { if (!fast()) sfx.results(); });
   game.on('winner', (code, log) => {
-    sfx.winner();
+    const rounds = log.rounds.filter((r) => !r.replay).length;
+    window.__summary = { seed, minutes: +(game.T / 60).toFixed(2), rounds, replays: log.replays, winner: game.byCode.get(code).name, nudges: game.world.stats.nudges + game.world.stats.progressNudges, forced: game.world.stats.forced };
+    console.log('[summary] ' + JSON.stringify(window.__summary));
+    if (!fast()) sfx.winner(); else sfx.cfg.enabled = false;
     for (let i = 0; i < 240; i++) ui.confetti.push({ x: Math.random() * 1080, y: -Math.random() * 900, vx: (Math.random() - 0.5) * 160, vy: 120 + Math.random() * 260, w: 8 + Math.random() * 10, h: 14 + Math.random() * 12, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 8, color: ['#ffd84d', '#35e0ff', '#ff4d6d', '#2fe39a', '#ffffff', '#b07bff'][i % 6] });
     fetch('/api/log', { method: 'POST', body: JSON.stringify({ ...log, finishedAt: Date.now(), countries: countries.length }) }).catch(() => {});
   });
-  game.on('restart', () => { location.href = `/?${new URLSearchParams([...q.entries()].filter(([k]) => !['seed', 'resume'].includes(k)))}`; });
+  game.on('restart', () => { if (q.get('once')) { window.__finished = true; return; } location.href = `/?${new URLSearchParams([...q.entries()].filter(([k]) => !['seed', 'resume'].includes(k)))}`; });
 
   // ---- live chat highlights (never touches the game state)
   if (cfg.chat?.enabled || q.get('chat')) {

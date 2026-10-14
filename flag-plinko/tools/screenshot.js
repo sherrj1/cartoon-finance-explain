@@ -25,6 +25,15 @@ await ff("(g)=>g.mode==='results'&&g.roundNo===3"); await ff('(g)=>g.T>=g.modeEn
 await ff("(g)=>g.mode==='drop'&&g.roundNo===8&&g.round.landed>=3"); await shot('05-drop-small-round');
 await ff("(g)=>g.inFinale&&g.mode==='drop'&&g.round.landed>=6"); await shot('06-finale');
 await ff("(g)=>g.mode==='winner'"); await ff('(g)=>g.T>=g.modeEnd-25'); await shot('07-winner');
+// chat highlight: viewers type country names; balls on the board get a gold ring + their name, the footer shows the leaderboard
+await page.goto('http://localhost:8099/?seed=123&mute=1&game=60&intro=10&chat=1');
+await page.waitForFunction(() => window.__ready, null, { timeout: 60000 });
+await ff("(g)=>g.mode==='drop'&&g.world.balls.length>=6&&g.T>g.round.bannerEnd+30");
+const names = await page.evaluate(() => window.__game.world.balls.slice(0, 4).map((b) => window.__game.byCode.get(b.payload.code).name));
+const users = ['Anna', 'Jeroen', 'Maria', 'Luca'];
+for (let i = 0; i < names.length; i++) await fetch('http://localhost:8099/api/chat', { method: 'POST', body: JSON.stringify({ user: users[i], text: 'go ' + names[i] + '!' }) });
+for (let i = 0; i < 5; i++) await fetch('http://localhost:8099/api/chat', { method: 'POST', body: JSON.stringify({ user: 'fan' + i, text: names[0] }) });
+await shot('08-chat-highlight');
 console.log('page errors:', errors.length ? errors : 'none');
 await browser.close(); srv.close();
 process.exit(errors.length ? 1 : 0);

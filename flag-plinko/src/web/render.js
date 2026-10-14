@@ -337,13 +337,23 @@ export class Renderer {
     g.restore();
   }
 
+  _fit(g, text, maxW, size, weight = 800) {
+    g.font = F(size, weight);
+    while (g.measureText(text).width > maxW && size > 13) { size--; g.font = F(size, weight); }
+    if (g.measureText(text).width > maxW) { while (text.length > 4 && g.measureText(text + '…').width > maxW) text = text.slice(0, -1); text += '…'; }
+    return [text, size];
+  }
+
   _footer(g, game, ui) {
     const L = LAYOUT;
-    txt(g, this.cfg.watermark || '', 40, L.wmY + 14, 22, C.dim, { align: 'left', weight: 700 });
     const top = ui.chat?.top;
-    if (top && top.length) {
+    const hasTop = top && top.length;
+    const [wm, wms] = this._fit(g, this.cfg.watermark || '', hasTop ? 500 : 1000, 22, 700);
+    txt(g, wm, 40, L.wmY + 14, wms, C.dim, { align: 'left', weight: 700 });
+    if (hasTop) {
       const t = top[0];
-      txt(g, `★ MOST SUPPORTED: ${game.byCode.get(t.code).name.toUpperCase()} (${t.n})`, 1040, L.wmY + 14, 22, C.gold, { align: 'right' });
+      const [st, ss] = this._fit(g, `★ MOST SUPPORTED: ${game.byCode.get(t.code).name.toUpperCase()} (${t.n})`, 490, 22);
+      txt(g, st, 1040, L.wmY + 14, ss, C.gold, { align: 'right' });
     }
   }
 

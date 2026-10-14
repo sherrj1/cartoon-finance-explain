@@ -9,7 +9,7 @@
   "stream": {
     "rtmpUrl": "rtmp://a.rtmp.youtube.com/live2",
     "streamKey": "",
-    "fps": 60,
+    "fps": 30,
     "videoBitrate": "6000k",
     "audio": "pulse",
     "pulseSource": "flagplinko.monitor",

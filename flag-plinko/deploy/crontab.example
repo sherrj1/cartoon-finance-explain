@@ -1,0 +1,7 @@
+# Several 3-hour streams per day with cron instead of config.stream.schedule.
+# Each run streams exactly one game (--once) and exits. Start times are 3h15m apart so games never overlap.
+# (The built-in alternative: "schedule": ["06:00","09:15","12:30","15:45","19:00","22:15"] in config.local.json and just run `node run.js`.)
+0  6 * * *  cd /opt/flag-plinko && node run.js --once >> logs/stream.log 2>&1
+15 9 * * *  cd /opt/flag-plinko && node run.js --once >> logs/stream.log 2>&1
+30 12 * * * cd /opt/flag-plinko && node run.js --once >> logs/stream.log 2>&1
+45 15 * * * cd /opt/flag-plinko && node run.js --once >> logs/stream.log 2>&1
