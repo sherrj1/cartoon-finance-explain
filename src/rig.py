@@ -252,4 +252,7 @@ def mood_params(mood, t, kind):
         P["lid"] = 0.25; P["look"] = (0, -4)
         P["armL"] = -8 + 3 * s(tau * 0.8 * t)
         P["sy"] = 1.025; P["sx"] = 0.99
+    # Eye stalks stay straight and parallel (as drawn); at most a tiny shared sway, like a head bob.
+    st_amp = {"excited": 2.4, "greedy": 2.0, "shock": 0.0, "angry": 0.0}.get(mood, 1.3)
+    P["stL"] = P["stR"] = st_amp * s(tau * 0.8 * t)
     return P
