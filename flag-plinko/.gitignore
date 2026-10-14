@@ -4,3 +4,4 @@ logs/games/
 state/
 *.mp4
 config.local.json
+flag-plinko/shots/
