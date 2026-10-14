@@ -13,6 +13,11 @@ _png_cache = {}
 
 
 def svg_img(svg, width):
+    if isinstance(svg, Image.Image):
+        key = (id(svg), int(width))
+        if key not in _png_cache:
+            _png_cache[key] = svg.resize((int(width), max(1, int(svg.height * width / svg.width))), Image.LANCZOS)
+        return _png_cache[key]
     key = (hash(svg), width)
     if key not in _png_cache:
         png = cairosvg.svg2png(bytestring=svg.encode(), output_width=int(width))
@@ -25,7 +30,9 @@ class L:
 
     def __init__(self, asset, x, y, w, anim="pop", delay=0.0, until=None, bob=0, shadow=False,
                  delay_f=None, until_f=None, rot=0, wiggle=0):
-        self.svg, (aw, ah) = asset
+        self.svg, (aw, ah), *rest = asset if len(asset) == 3 else (*asset, 1.0)
+        if rest and rest[0] != 1.0:
+            w = w * rest[0]
         self.x, self.y, self.w = x, y, w
         self.h = w * ah / aw
         self.anim, self.delay, self.until = anim, delay, until

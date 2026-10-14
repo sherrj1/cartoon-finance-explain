@@ -10,7 +10,13 @@ def K(x=CX, y=820, w=760, **kw):
     anim = kw.pop("anim", "pop")
     delay = kw.pop("delay", 0.0)
     delay_f = kw.pop("delay_f", None)
-    return L(C.krabs(**kw), x, y, w, anim=anim, delay=delay, delay_f=delay_f, bob=6, shadow=True)
+    asset = C.krabs(**kw)
+    # keep the whole sprite (claws included) inside the visible frame, even after the zoom
+    factor = asset[2]
+    maxw = 2 * min(x - 110, 1080 - 110 - x)
+    if w * factor > maxw:
+        w = maxw / factor
+    return L(asset, x, y, w, anim=anim, delay=delay, delay_f=delay_f, bob=6, shadow=True)
 
 
 def SB(x, y, w=380, anim="pop", delay=0.0, delay_f=None, flip=False):
@@ -32,7 +38,7 @@ SCENES = [
          text="Mr. Krabs knew the best way to build wealth was real estate.",
          layers=[prop(P.coin_tower(7), 840, 780, 400, delay=0.3), prop(P.icon_house(), 840, 400, 240, anim="drop", delay=0.9),
                  K(380, 900, 700, pose="point", mouth="smile", lid=0.15),
-                 prop(P.caption_title("Real Estate\nInvestment P.1"), 520, 200, 900, anim="fade", until=2.8)]),
+                 prop(P.caption_title("Real Estate\nInvestment P.1"), 540, 330, 860, anim="fade", until=2.8)]),
     # 2
     dict(say="But he hated dealing with tenants.", text="But he hated dealing with tenants.",
          layers=[prop(P.queue(3, False), 700, 470, 760, anim="right", delay=0.3),
@@ -103,7 +109,7 @@ SCENES = [
     # 20
     dict(say="Then SpongeBob rented unit seven, to store four hundred jellyfish nets.",
          text="Then SpongeBob rented unit 7 to store 400 jellyfish nets.",
-         layers=[prop(P.container("7", door="open"), 740, 780, 640), prop(P.nets(4), 860, 440, 360, delay_f=0.55), SB(300, 860, 440, anim="left")]),
+         layers=[prop(P.container("7", door="open"), 700, 780, 560), prop(P.nets(4), 860, 440, 360, delay_f=0.55), SB(250, 860, 420, anim="left")]),
     # 21
     dict(say="In month three, SpongeBob stopped paying.", text="In month three, SpongeBob stopped paying.",
          layers=[prop(P.wallet_empty(), 780, 560, 420), prop(P.calendar("MONTH 3", "RENT DUE"), 800, 1000, 340, delay_f=0.4), SB(290, 840, 440, flip=True)]),
@@ -188,7 +194,7 @@ _beats(16, [(0.62, [K(CX, 860, 760, pose="cross", mouth="smirk", lid=0.45, tilt=
        base=[prop(P.icon_toilet(False), 230, 540, 260), prop(P.icon_form(), 540, 540, 260, delay_f=0.12), prop(P.phone(False), 850, 540, 290, delay_f=0.3),
              X(230, 540, 280, delay_f=0.10), X(540, 540, 280, delay_f=0.22), X(850, 540, 280, delay_f=0.46)])
 _beats(19, [(0.5, [prop(P.nets(4), CX, 620, 820), SB(300, 1040, 380, flip=True)])],
-       base=[prop(P.container("7", door="open"), 740, 780, 640), SB(300, 860, 440, anim="left")])
+       base=[prop(P.container("7", door="open"), 700, 780, 560), SB(250, 860, 420, anim="left")])
 _beats(21, [(0.55, [prop(P.clock("MONTHS", face="#fff"), CX, 620, 600), prop(P.stack_papers(6), CX, 1000, 760, delay_f=0.2)])],
        base=[prop(P.judge_bench(), CX, 620, 900), prop(P.stack_papers(5), 270, 1060, 420, delay_f=0.4)])
 _beats(22, [(0.5, [prop(P.contract(), CX, 700, 760, wiggle=2)])],

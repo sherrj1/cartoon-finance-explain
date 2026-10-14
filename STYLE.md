@@ -11,8 +11,8 @@ composition, no text except where specified, no watermark.
 
 ## Personages (houd outfit identiek tussen scènes)
 
-- **Mr. Krabs**: kleine rode krab, grote kleine ogen op stelen, blauw capitein-pak met gouden knopen en zwarte kapiteinsmuts, dikke scharen, schuine grijns. Standaardhouding: armen (scharen) over elkaar.
-- **SpongeBob** (alleen cameo): gele vierkante spons, bruine broek, witte overhemd + rode das, groot lachend gezicht.
+- **Mr. Krabs**: uitsluitend de aangeleverde afbeeldingen in `assets/krabs_*.png` (zwaaien, klauwen gevouwen, liggend op geld). Niet opnieuw tekenen.
+- **SpongeBob** (alleen cameo): de aangeleverde SVG in `assets/spongebob.svg`.
 - **Verhuurders/tegenpartijen**: simpele zwarte silhouetten of grijze figuren, nooit gedetailleerd (houdt de aandacht op Krabs).
 
 ## Beeldtypes (afwisselen, ~50/50)
