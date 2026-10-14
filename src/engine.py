@@ -1,7 +1,7 @@
 """Tiny 2D scene engine: SVG layers -> animated frames -> ffmpeg."""
 import io, math, os, subprocess
 import cairosvg
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 W, H = 1080, 1920
 FPS = 30
@@ -10,6 +10,16 @@ CAP_Y = int(H * 0.66)
 FONT_CAP = "/usr/share/fonts/opentype/inter/InterDisplay-BlackItalic.otf"
 
 _png_cache = {}
+_rigs = {}
+RIG_ASPECT = {'wave': (794, 810), 'fold': (624, 1080), 'money': (938, 736)}
+
+
+def get_rig(kind, width):
+    from rig import KrabsRig
+    key = (kind, int(round(width / 20.0) * 20))
+    if key not in _rigs:
+        _rigs[key] = KrabsRig(kind, key[1])
+    return _rigs[key]
 
 
 def svg_img(svg, width):
@@ -29,10 +39,18 @@ class L:
     """One layer. x,y = centre on the 1080x1920 canvas, w = target pixel width."""
 
     def __init__(self, asset, x, y, w, anim="pop", delay=0.0, until=None, bob=0, shadow=False,
-                 delay_f=None, until_f=None, rot=0, wiggle=0):
-        self.svg, (aw, ah), *rest = asset if len(asset) == 3 else (*asset, 1.0)
-        if rest and rest[0] != 1.0:
-            w = w * rest[0]
+                 delay_f=None, until_f=None, rot=0, wiggle=0, rig=None, phase=0.0, idle=None, flip=False):
+        self.rig, self.phase, self.flip = rig, phase, flip
+        if rig is not None:
+            self.svg, (aw, ah) = None, RIG_ASPECT[rig[0]]
+            asset = (None, (aw, ah))
+            bob = 0
+            idle = 0
+        else:
+            self.svg, (aw, ah), *rest = asset if len(asset) == 3 else (*asset, 1.0)
+            if rest and rest[0] != 1.0:
+                w = w * rest[0]
+        self.idle = (4.0 if idle is None else idle)
         self.x, self.y, self.w = x, y, w
         self.h = w * ah / aw
         self.anim, self.delay, self.until = anim, delay, until
@@ -116,7 +134,7 @@ def cap_img(word, size=104):
     return _caps[key]
 
 
-def frame_at(bg, layers, t, dur, words, ct=None):
+def frame_at(bg, layers, t, dur, words, ct=None, cam='in'):
     tc = t if ct is None else ct
     frame = bg.copy()
     for ly in layers:
@@ -143,13 +161,23 @@ def frame_at(bg, layers, t, dur, words, ct=None):
         if ly.bob:
             dy += math.sin(t * 2 * math.pi * 1.1) * ly.bob
             scale *= 1 + math.sin(t * 2 * math.pi * 1.1 + 1.2) * 0.008
+        if ly.idle:
+            dy += math.sin(2 * math.pi * (0.42 * t + ly.phase + ly.x * 0.0013)) * ly.idle
         ang = ly.rot + (math.sin(t * 2 * math.pi * 0.9) * ly.wiggle if ly.wiggle else 0)
-        w = max(8, int(ly.w * scale))
-        im = svg_img(ly.svg, ly.w if scale == 1.0 and not ang else w)
-        if ang:
-            im = im.rotate(ang, resample=Image.BICUBIC, expand=True)
-        if scale != 1.0:
-            im = im.resize((max(1, int(im.width * w / ly.w)), max(1, int(im.height * w / ly.w))), Image.BILINEAR)
+        if ly.rig is not None:
+            kind, mood = ly.rig
+            im = get_rig(kind, ly.w).frame(lt, mood, ly.phase)
+            if ly.flip:
+                im = ImageOps.mirror(im)
+            if scale != 1.0:
+                im = im.resize((max(1, int(im.width * scale)), max(1, int(im.height * scale))), Image.BILINEAR)
+        else:
+            w = max(8, int(ly.w * scale))
+            im = svg_img(ly.svg, ly.w if scale == 1.0 and not ang else w)
+            if ang:
+                im = im.rotate(ang, resample=Image.BICUBIC, expand=True)
+            if scale != 1.0:
+                im = im.resize((max(1, int(im.width * w / ly.w)), max(1, int(im.height * w / ly.w))), Image.BILINEAR)
         if alpha < 1:
             a = im.getchannel("A").point(lambda v: int(v * alpha))
             im = im.copy(); im.putalpha(a)
@@ -158,10 +186,26 @@ def frame_at(bg, layers, t, dur, words, ct=None):
             sh = shadow_img(im.width * 0.7)
             frame.paste(sh, (int(ly.x + dx - sh.width / 2), int(ly.y + ly.h / 2 - 10)), sh)
         frame.paste(im, (px, py), im)
-    # slow push-in
-    z = 1.14 + 0.06 * (t / max(dur, 0.1))
+    # camera move (zoom/pan), eased
+    p = min(1.0, max(0.0, t / max(dur, 0.1)))
+    sm = p * p * (3 - 2 * p)
+    pan = 0.0
+    if cam == "in":
+        z = 1.12 + 0.10 * sm
+    elif cam == "out":
+        z = 1.26 - 0.12 * sm
+    elif cam == "pan_l":
+        z = 1.18; pan = (0.5 - sm) * 90
+    elif cam == "pan_r":
+        z = 1.18; pan = (sm - 0.5) * 90
+    elif cam == "punch":
+        k = min(1.0, t / 0.35)
+        z = 1.16 + 0.17 * (1 - k) ** 2 + 0.04 * sm
+    else:
+        z = 1.14
     cw, ch = W / z, H / z
-    x0, y0 = (W - cw) / 2, min(H - ch, (H - ch) / 2 + 40)
+    x0 = max(0, min(W - cw, (W - cw) / 2 + pan))
+    y0 = min(H - ch, (H - ch) / 2 + 40)
     frame = frame.resize((W, H), Image.BILINEAR, box=(x0, y0, x0 + cw, y0 + ch))
     # captions
     cur = None
@@ -180,16 +224,25 @@ def frame_at(bg, layers, t, dur, words, ct=None):
     return frame
 
 
+CAMS = ["punch", "in", "pan_l", "out", "pan_r", "in"]
+
+
 def frame_scene(sc, bg, t, dur, words):
     """Picks the active visual beat of a scene (scenes can cut to a 2nd/3rd image mid-narration)."""
     beats = [(0.0, sc["layers"])] + sc.get("beats", [])
-    idx = max(i for i, (f, _) in enumerate(beats) if t >= f * dur - 1e-6)
+    idx = max(i for i, b in enumerate(beats) if t >= b[0] * dur - 1e-6)
     f0 = beats[idx][0]
     f1 = beats[idx + 1][0] if idx + 1 < len(beats) else 1.0
     b = sc.get("beat_bgs", {}).get(idx)
     if b:
         bg = bg_image(*b)
-    return frame_at(bg, beats[idx][1], t - f0 * dur, (f1 - f0) * dur, words, ct=t)
+    if len(beats[idx]) > 2:
+        cam = beats[idx][2]
+    elif idx == 0 and sc.get("first_cam"):
+        cam = sc["first_cam"]
+    else:
+        cam = CAMS[(sc.get("cam_seed", 0) + idx) % len(CAMS)]
+    return frame_at(bg, beats[idx][1], t - f0 * dur, (f1 - f0) * dur, words, ct=t, cam=cam)
 
 
 def render_scene(args):

@@ -410,3 +410,62 @@ def caption_title(text, size=84):
 def notebook_waitlist():
     return S(420, 520, box(20, 20, 380, 480, "#fff", 12, 8) + T(210, 76, "WAITING LIST", 38, INK, 900) +
              "".join(f'<line x1="50" y1="{130+i*54}" x2="370" y2="{130+i*54}" stroke="#777" stroke-width="5"/>' + T(60, 122 + i * 54, f"{i+1}.", 24, "#444", 800, "start") for i in range(7)))
+
+
+# ---------------------------------------------------------------- reaction effects (cartoon "symbols")
+def fx_sweat():
+    return S(160, 220, f'<path d="M50 10 Q86 80 50 104 Q14 80 50 10 Z" fill="#8fd3ff" stroke="{INK}" stroke-width="7"/>'
+             f'<path d="M115 110 Q140 160 115 178 Q90 160 115 110 Z" fill="#8fd3ff" stroke="{INK}" stroke-width="7"/>')
+
+
+def fx_anger():
+    d = "M20 70 Q50 70 50 40 M20 70 Q50 70 50 100 M80 70 Q50 70 50 40 M80 70 Q50 70 50 100"
+    return S(140, 140, f'<g transform="translate(10,10)"><path d="{d}" fill="none" stroke="{INK}" stroke-width="22" stroke-linecap="round" transform="scale(1.15)"/>'
+             f'<path d="{d}" fill="none" stroke="#e02020" stroke-width="12" stroke-linecap="round" transform="scale(1.15)"/></g>')
+
+
+def fx_exclaim(color="#e02020"):
+    return S(120, 220, f'<rect x="38" y="10" width="44" height="120" rx="20" fill="{color}" stroke="{INK}" stroke-width="8"/>'
+             f'<circle cx="60" cy="176" r="24" fill="{color}" stroke="{INK}" stroke-width="8"/>')
+
+
+def fx_question(color="#2e6da4"):
+    return S(160, 230, T(80, 150, "?", 190, color, 900, extra=f'stroke="{INK}" stroke-width="8" paint-order="stroke"'))
+
+
+def fx_sparkle(n=3):
+    import math
+    out = ""
+    pos = [(60, 70, 1.0), (150, 30, 0.6), (150, 130, 0.75), (40, 170, 0.5)]
+    for x, y, s in pos[:n + 1]:
+        pts = " ".join(f"{x + r * s * math.cos(a):.1f},{y + r * s * math.sin(a):.1f}" for a, r in
+                       [(-math.pi / 2, 40), (-math.pi / 4, 9), (0, 40), (math.pi / 4, 9), (math.pi / 2, 40), (3 * math.pi / 4, 9),
+                        (math.pi, 40), (-3 * math.pi / 4, 9)])
+        out += f'<polygon points="{pts}" fill="#fff6a8" stroke="{INK}" stroke-width="5" stroke-linejoin="round"/>'
+    return S(200, 210, out)
+
+
+def fx_dollars():
+    import random
+    r = random.Random(4)
+    out = ""
+    for i in range(6):
+        x, y, a = 20 + i * 62, r.randint(10, 120), r.randint(-30, 30)
+        out += f'<g transform="translate({x},{y}) rotate({a})">' + box(0, 0, 70, 38, "#7cc27c", 6, 5) + T(35, 28, "$", 24, "#2e6a2e", 900) + "</g>"
+    return S(420, 180, out)
+
+
+def fx_zzz():
+    return S(200, 200, "".join(T(30 + i * 45, 150 - i * 45, "Z", 60 + i * 18, "#fff", 900, extra=f'stroke="{INK}" stroke-width="6" paint-order="stroke"') for i in range(3)))
+
+
+def fx_lines(n=10, size=420):
+    """Speed/impact lines around a centre."""
+    import math
+    out = ""
+    for i in range(n):
+        a = i * 2 * math.pi / n
+        x0, y0 = size / 2 + 150 * math.cos(a), size / 2 + 150 * math.sin(a)
+        x1, y1 = size / 2 + 200 * math.cos(a), size / 2 + 200 * math.sin(a)
+        out += f'<line x1="{x0:.0f}" y1="{y0:.0f}" x2="{x1:.0f}" y2="{y1:.0f}" stroke="{INK}" stroke-width="10" stroke-linecap="round"/>'
+    return S(size, size, out)

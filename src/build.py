@@ -113,16 +113,19 @@ def main():
             if sc.get("end_card"):
                 continue
             bg = engine.bg_image(sc.get("bg", "day"), sc.get("ground"), sc.get("ground_y", 1080))
-            t = min(p["dur"] - 0.05, 1.6)
-            fr = engine.frame_scene(sc, bg, t, p["dur"], p["words"])
-            fr.save(os.path.join(SCRATCH, f"still_{i:02d}.jpg"), quality=85)
-            stills.append(fr.resize((270, 480)))
-        for s in range(0, len(stills), 12):
-            chunk = stills[s: s + 12]
-            sheet = Image.new("RGB", (270 * 6, 480 * 2), (0, 0, 0))
+            fr_list = [0.0] + [bt[0] for bt in sc.get("beats", [])] + [1.0]
+            for k in range(len(fr_list) - 1):
+                f0, f1 = fr_list[k], fr_list[k + 1]
+                t = f0 * p["dur"] + min(1.0, 0.7 * (f1 - f0) * p["dur"])
+                fr = engine.frame_scene(sc, bg, min(t, p["dur"] - 0.04), p["dur"], p["words"])
+                stills.append(fr.resize((216, 384)))
+        for s in range(0, len(stills), 24):
+            chunk = stills[s: s + 24]
+            sheet = Image.new("RGB", (216 * 8, 384 * 3), (0, 0, 0))
             for j, im in enumerate(chunk):
-                sheet.paste(im, ((j % 6) * 270, (j // 6) * 480))
-            sheet.save(os.path.join(SCRATCH, f"sheet_{s // 12}.jpg"), quality=85)
+                sheet.paste(im, ((j % 8) * 216, (j // 8) * 384))
+            sheet.save(os.path.join(SCRATCH, f"beats_{s // 24}.jpg"), quality=85)
+        print(len(stills), "beats")
         return
 
     jobs = [dict(scene=sc, dur=p["dur"], words=p["words"], out=os.path.join(SCRATCH, f"seg_{i:02d}.mp4"))
