@@ -47,6 +47,20 @@ def SB(x, y, w=380, anim="pop", flip=False, **kw):
     return L(C.spongebob(flip=flip), x, y, w, anim=anim, shadow=True, wiggle=2.5, **kw)
 
 
+_plankton = None
+
+
+def PL(x, y, w=430, **kw):
+    """Plankton (supplied artwork) - the new tenant."""
+    global _plankton
+    if _plankton is None:
+        from PIL import Image
+        import os
+        im = Image.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "plankton.png")).convert("RGBA")
+        _plankton = (im, im.size)
+    return L(_plankton, x, y, w, anim=kw.pop("anim", "drop"), shadow=True, wiggle=3.5, bob=9, **kw)
+
+
 def p(asset, x, y, w, **kw):
     return L(asset, x, y, w, **kw)
 
@@ -94,7 +108,7 @@ add("Mr. Krabs knew the best way to build wealth was real estate.", [
     ("Mr. Krabs knew the best way", [p(P.coin_tower(7), 860, 800, 400, delay=0.3), p(P.icon_house(), 860, 420, 240, anim="drop", delay=0.8),
                                      KW("excited", 380, 900, 680),
                                      p(P.caption_title("Real Estate\nInvestment P.1"), 540, 330, 860, anim="fade")]),
-    ("to build wealth was real estate.", [KM("greedy", CX, 850, 860), p(P.fx_sparkle(), 860, 520, 280, delay=0.3)]),
+    ("to build wealth was real estate.", [KM("greedy", CX, 850, 860), p(P.fx_sparkle(2), 850, 300, 260, delay=0.3)]),
 ])
 # 2
 add("But he hated dealing with tenants.", [
@@ -137,7 +151,7 @@ add("The seller thought it was worthless.", [
 # 9
 add("Mr. Krabs saw a gold mine.", [
     ("Mr. Krabs", [KFc("shock")]),
-    ("saw a gold mine.", [p(P.stars_burst(), CX, 820, 900, anim="fade"), KM("greedy", CX, 860, 830), p(P.fx_sparkle(3), 880, 480, 300, delay=0.2)], "punch"),
+    ("saw a gold mine.", [p(P.stars_burst(), CX, 820, 900, anim="fade"), KM("greedy", CX, 860, 830), p(P.fx_sparkle(2), 880, 250, 300, delay=0.2)], "punch"),
 ])
 # 10
 add("He bought twenty steel shipping containers,", [
@@ -238,7 +252,7 @@ add("He kept the three hundred sixty dollars owed, and sent the five hundred for
 # 28
 add("By the next morning, unit seven had a new tenant.", [
     ("By the next morning,", [p(P.clock("8 AM", face="#fff"), CX, 600, 520), KF("happy", 760, 1000, 380)]),
-    ("unit 7 had a new tenant.", [p(P.container("7", door="open"), CX, 560, 760), p(P.queue(2), CX, 1000, 560, delay=0.3)]),
+    ("unit 7 had a new tenant.", [p(P.container("7", door="open"), CX, 540, 760), PL(CX, 960, 620, delay=0.25), p(P.fx_sparkle(2), 830, 770, 200, delay=0.7)]),
 ])
 # 29
 add("Then Mr. Krabs noticed the waiting list. So he built twenty more units.", [

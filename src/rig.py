@@ -6,7 +6,8 @@ dollar-sign eyes. Nothing of his body is redrawn: every pixel except the pupils 
 supplied images.
 """
 import math, os
-from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageChops
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont, ImageOps, ImageChops, ImageFilter
 
 ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets")
 FONT = "/usr/share/fonts/opentype/inter/Inter-Black.otf"
@@ -48,7 +49,7 @@ class KrabsRig:
             px, py = st["pupil"]
             self.green = _sample(src, (px - st["prx"] - 8, py - st["pry"] - 14))
         for st in spec["stalks"]:
-            part = self._cut(src, base, st["core"], st["ext"])
+            part = self._cut_stalk(src, base, st["core"])
             part.update(side=st["side"], pupil=st["pupil"], prx=st["prx"], pry=st["pry"], pivot=st["pivot"], kind="stalk")
             self.parts.append(part)
         for p in spec["parts"]:
@@ -61,6 +62,38 @@ class KrabsRig:
             p["img_s"] = p["img"].resize((max(1, int(p["img"].width * self.s)), max(1, int(p["img"].height * self.s))), Image.LANCZOS)
             p["off_s"] = (ox * self.s, oy * self.s)
             p["piv_s"] = (p["pivot"][0] * self.s, p["pivot"][1] * self.s)
+
+    @staticmethod
+    def _cut_stalk(src, base, box, margin=9):
+        """Cut one eye stalk out by its own shape: every column stops `margin` px above the first red
+        (head) pixel, so the head outline stays in the base and no seam/crack appears between the eyes."""
+        x0, y0, x1, y1 = box
+        a = np.array(src)
+        mask = np.zeros(a.shape[:2], bool)      # cleared from the base
+        mask_piece = np.zeros(a.shape[:2], bool)  # moving part: a few px longer, overlaps the base (no hairline seam)
+        for x in range(x0, x1):
+            col = a[y0:y1, x]
+            red = (col[:, 0] > 200) & (col[:, 1] < 95) & (col[:, 2] < 95) & (col[:, 3] > 200)
+            idx = np.where(red)[0]
+            ylim = y0 + idx[0] if len(idx) else y1
+            mask[y0:max(y0, ylim - margin), x] = True
+            mask_piece[y0:max(y0, ylim - 5), x] = True
+        # the brown curl of hair sitting on the head is not part of the stalk
+        R, G, B = a[..., 0].astype(int), a[..., 1].astype(int), a[..., 2].astype(int)
+        brown = (R > 90) & (R < 200) & (G > 25) & (G < 100) & (B > 15) & (B < 75) & (R - G > 50)
+        yy = np.arange(a.shape[0])[:, None]
+        for mk in (mask, mask_piece):
+            mk &= ~(brown & (yy > 250))
+            mk &= a[..., 3] > 0
+        ys, xs = np.where(mask_piece)
+        bb = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
+        m = Image.fromarray((mask * 255).astype("uint8"), "L")
+        mp = Image.fromarray((mask_piece * 255).astype("uint8"), "L")
+        part = src.copy()
+        part.putalpha(ImageChops.multiply(src.getchannel("A"), mp))
+        part = part.crop(bb)
+        base.putalpha(ImageChops.multiply(base.getchannel("A"), ImageChops.invert(m)))
+        return dict(img=part, off=(bb[0], bb[1]))
 
     @staticmethod
     def _cut(src, base, core, ext):
@@ -78,16 +111,24 @@ class KrabsRig:
         cx, cy = p["pupil"][0] - ox, p["pupil"][1] - oy
         rx, ry = p["prx"], p["pry"]
         k = 4  # supersample the little eye overlay
-        w, h = img.size
         pad = int(max(rx, ry) * 2.2)
         box = (cx - pad, cy - pad, cx + pad, cy + pad)
         region = img.crop(box)
         big = region.resize((region.width * k, region.height * k), Image.LANCZOS)
+        # stalk interior = light, opaque pixels (never touch the black outline)
+        arr = np.array(big)
+        lum = arr[..., :3].astype(int).sum(axis=2) / 3
+        interior = Image.fromarray((((lum > 150) & (arr[..., 3] > 200)) * 255).astype("uint8"), "L")
+        # local stalk colour: sample just above and below the pupil
+        def px(dy):
+            xx, yy = cx, int(cy + dy)
+            return p["img"].getpixel((min(max(xx, 0), p["img"].width - 1), min(max(yy, 0), p["img"].height - 1)))[:3]
+        up, dn = px(-ry * 1.9), px(ry * 1.9)
+        green = tuple((u + d) // 2 for u, d in zip(up, dn)) + (255,)
         d = ImageDraw.Draw(big)
         c = pad * k
-        # erase the original pupil: fill the (clean) interior of the stalk around it
         er = int(max(rx, ry) * 1.35 * k)
-        d.ellipse((c - er * 0.8, c - er, c + er * 0.8, c + er), fill=self.green + (255,))
+        d.ellipse((c - er * 0.8, c - er, c + er * 0.8, c + er), fill=green)
         lx, ly = look
         pcx, pcy = c + lx * k, c + ly * k
         if dollar:
@@ -98,7 +139,6 @@ class KrabsRig:
         else:
             prx, pry = rx * pscale, ry * pscale * (1 - 0.85 * blink)
             d.ellipse((pcx - prx * k, pcy - pry * k, pcx + prx * k, pcy + pry * k), fill=(12, 12, 12, 255))
-            # highlight
             hx, hy = pcx + prx * 0.28 * k, pcy - pry * 0.38 * k
             hr = max(2, prx * 0.30 * k)
             d.ellipse((hx - hr, hy - hr * 1.15, hx + hr, hy + hr * 1.15), fill=(255, 255, 255, 255))
@@ -108,16 +148,18 @@ class KrabsRig:
                 yb = ytop + lid * 2 * pry * k
                 x0, x1 = c - rx * 2.6 * k, c + rx * 2.6 * k
                 t = tilt * k
-                # outer side higher, inner side lower when angry (tilt>0)
                 xo, xi = (x0, x1) if inner == 1 else (x1, x0)
-                poly = [(xo, yb - t), (xi, yb + t), (xi, ytop - 3 * pry * k), (xo, ytop - 3 * pry * k)]
-                d.polygon(poly, fill=self.green + (255,))
-                d.line([(xo, yb - t), (xi, yb + t)], fill=(15, 15, 15, 255), width=int(3.4 * k))
+                layer = Image.new("RGBA", big.size, (0, 0, 0, 0))
+                ld = ImageDraw.Draw(layer)
+                ld.polygon([(xo, yb - t), (xi, yb + t), (xi, ytop - 3 * pry * k), (xo, ytop - 3 * pry * k)], fill=green)
+                ld.line([(xo, yb - t), (xi, yb + t)], fill=(15, 15, 15, 255), width=int(3.4 * k))
+                # keep the lid inside the stalk: the outline stays untouched
+                la = ImageChops.multiply(layer.getchannel("A"), interior.filter(ImageFilter.MinFilter(3)))
+                layer.putalpha(la)
+                big.alpha_composite(layer)
         small = big.resize(region.size, Image.LANCZOS)
         img.paste(small, box[:2])
-        # keep alpha from the original piece (the eye never leaves the stalk)
-        orig_a = p["img"].getchannel("A")
-        img.putalpha(orig_a)
+        img.putalpha(p["img"].getchannel("A"))
         return img.resize((max(1, int(img.width * self.s)), max(1, int(img.height * self.s))), Image.LANCZOS)
 
     # ------------------------------------------------------------------ frame
@@ -141,6 +183,9 @@ class KrabsRig:
             self._paste_rot(canvas, img, p, ang, (mx, my))
         # whole-body squash & stretch anchored at the feet
         sx, sy = P["sx"], P["sy"]
+        if self.kind == "money":
+            sx = sy = 1.0
+            P["dx"] = 0
         if abs(sx - 1) > 1e-3 or abs(sy - 1) > 1e-3:
             fx, fy = mx + W * 0.5, my + H * 0.98
             nw, nh = int(canvas.width * sx), int(canvas.height * sy)
