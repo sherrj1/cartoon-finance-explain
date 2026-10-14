@@ -35,7 +35,7 @@ SCENES = [
                  prop(P.caption_title("Real Estate\nInvestment P.1"), 520, 200, 900, anim="fade", until=2.8)]),
     # 2
     dict(say="But he hated dealing with tenants.", text="But he hated dealing with tenants.",
-         layers=[prop(P.queue(3, False), 700, 560, 760, anim="right", delay=0.3),
+         layers=[prop(P.queue(3, False), 700, 470, 760, anim="right", delay=0.3),
                  K(CX, 1000, 720, pose="hips", mouth="frown", lid=0.45, tilt=10, sweat=True)]),
     # 3
     dict(say="Renting apartments is a headache.", text="Renting apartments is a headache.",
@@ -64,13 +64,13 @@ SCENES = [
                  prop(P.thought_dollar(), 290, 380, 330, anim="none")]),
     # 9
     dict(say="Mr. Krabs saw a gold mine.", text="Mr. Krabs saw a gold mine.",
-         layers=[prop(P.stars_burst(), CX, 820, 1050, anim="fade"), K(CX, 840, 780, pose="up", mouth="grin", dollar=True)]),
+         layers=[prop(P.stars_burst(), CX, 820, 900, anim="fade"), K(CX, 840, 780, pose="up", mouth="grin", dollar=True)]),
     # 10
     dict(say="He bought twenty steel shipping containers,", text="He bought twenty steel shipping containers,", ground="mud", ground_y=1150,
-         layers=[prop(P.container_grid(4, 5), CX, 640, 1000)]),
+         layers=[prop(P.container_grid(4, 5), CX, 640, 900)]),
     # 11
     dict(say="one gate, and a keypad.", text="One gate, and a keypad.", ground="mud", ground_y=1050,
-         layers=[prop(P.gate(), CX, 700, 960)]),
+         layers=[prop(P.gate(), CX, 700, 900)]),
     # 12
     dict(say="Total cost: forty-five thousand dollars.", text="Total cost: $45,000.",
          layers=[prop(P.calc("TOTAL BUILD COST", "$45,000"), CX, 760, 560, anim="drop")]),
@@ -80,14 +80,14 @@ SCENES = [
          layers=[prop(P.container("7"), CX, 560, 700), prop(P.tag("$120", "PER MONTH"), CX, 940, 700, delay_f=0.5)]),
     # 14
     dict(say="Within four months, all twenty were full.", text="Within four months, all twenty were full.",
-         layers=[prop(P.months(4, 4), CX, 430, 1000), prop(P.sign(["20 / 20", "FULL"]), CX, 920, 440, delay_f=0.6)]),
+         layers=[prop(P.months(4, 4), CX, 430, 900), prop(P.sign(["20 / 20", "FULL"]), CX, 920, 440, delay_f=0.6)]),
     # 15
     dict(say="Twenty units at a hundred and twenty dollars is twenty-four hundred dollars a month,",
          text="Twenty units at $120 is $2,400 a month,",
          layers=[prop(P.calc("MONTHLY REVENUE", "$2,400"), 700, 700, 470), K(290, 1000, 600, pose="rub", mouth="grin", delay_f=0.2)]),
     # 16
-    dict(say="from steel boxes sitting in the mud.", text="from steel boxes sitting in the mud.", ground="mud", ground_y=900,
-         layers=[prop(P.container_grid(2, 3), CX, 580, 920), prop(P.mud_splash(), 300, 1000, 380, delay_f=0.4), prop(P.mud_splash(), 800, 1050, 320, delay_f=0.5)]),
+    dict(say="from steel boxes sitting in the mud.", text="from steel boxes sitting in the mud.", ground="mud", ground_y=1020,
+         layers=[prop(P.container_grid(2, 3), CX, 580, 900), prop(P.mud_splash(), 300, 1000, 380, delay_f=0.4), prop(P.mud_splash(), 800, 1050, 320, delay_f=0.5)]),
     # 17
     dict(say="No toilets. No complaints. Boxes don't call you when something breaks.",
          text="No toilets. No complaints. Boxes don't call you when something breaks.",
@@ -99,7 +99,7 @@ SCENES = [
          layers=[prop(P.sign(["INSURANCE", "$10 / MO"]), 440, 720, 520), prop(P.icon_check(), 800, 560, 200, delay_f=0.5)]),
     # 19
     dict(say="Another two hundred dollars, for doing nothing.", text="Another $200, for doing nothing.",
-         layers=[prop(P.bill_stack(4, "+$200 / MONTH"), CX, 520, 760), K(CX, 1020, 620, pose="cross", mouth="smirk", lid=0.55, delay_f=0.35)]),
+         layers=[prop(P.bill_stack(4, "+$200 / MONTH"), CX, 520, 760), K(CX, 1170, 600, pose="cross", mouth="smirk", lid=0.55, delay_f=0.35)]),
     # 20
     dict(say="Then SpongeBob rented unit seven, to store four hundred jellyfish nets.",
          text="Then SpongeBob rented unit 7 to store 400 jellyfish nets.",
@@ -142,12 +142,12 @@ SCENES = [
          layers=[prop(P.notebook_waitlist(), 290, 700, 450), prop(P.container_grid(2, 3), 770, 700, 520, delay_f=0.5), K(CX, 1140, 380, pose="rub", mouth="grin", delay_f=0.2)]),
     # 30
     dict(say="Then a second site. Then a third.", text="Then a second site. Then a third.",
-         layers=[prop(P.map_pins(1), CX, 700, 960, until_f=0.38), prop(P.map_pins(2), CX, 700, 960, delay_f=0.38, until_f=0.7, anim="none"),
-                 prop(P.map_pins(3), CX, 700, 960, delay_f=0.7, anim="none")]),
+         layers=[prop(P.map_pins(1), CX, 700, 900, until_f=0.38), prop(P.map_pins(2), CX, 700, 900, delay_f=0.38, until_f=0.7, anim="none"),
+                 prop(P.map_pins(3), CX, 700, 900, delay_f=0.7, anim="none")]),
     # 31
     dict(say="Today he owns six sites, a hundred and forty units, and earns nineteen thousand six hundred dollars every single month.",
          text="Today he owns six sites, 140 units, and earns $19,600 every single month.",
-         layers=[prop(P.site_blocks(6), CX, 470, 980), prop(P.tag("$19,600", "PER MONTH"), CX, 1000, 800, delay_f=0.55)]),
+         layers=[prop(P.site_blocks(6), CX, 470, 900), prop(P.tag("$19,600", "PER MONTH"), CX, 1000, 800, delay_f=0.55)]),
     # 32
     dict(say="No boilers. No leaking roofs. No bedrooms.", text="No boilers. No leaking roofs. No bedrooms.",
          layers=[prop(P.icon_boiler(), 230, 440, 220), prop(P.icon_roof(), 540, 440, 230, delay_f=0.2), prop(P.icon_bed(), 850, 440, 260, delay_f=0.4),
@@ -162,3 +162,46 @@ SCENES = [
     # end card
     dict(end_card="Part 2 coming soon", say=None, text="", layers=[]),
 ]
+
+
+# ---------------------------------------------------------------------------
+# Long narration lines get a second (or third) picture, like the source videos
+# cut every ~2 seconds. beats = [(fraction_of_scene, layers)].
+def _beats(i, beats, base=None, bgs=None):
+    if base is not None:
+        SCENES[i]["layers"] = base
+    SCENES[i]["beats"] = beats
+    if bgs:
+        SCENES[i]["beat_bgs"] = bgs
+
+
+_beats(3, [(0.5, [prop(P.toilet_bubble(), CX, 520, 820), K(CX, 1080, 540, pose="up", mouth="open", sweat=True)])],
+       base=[prop(P.clock("2 AM", face="#222"), 220, 480, 330), prop(P.phone(), 600, 820, 640, wiggle=3)],
+       bgs={1: ("night", None, 1080)})
+_beats(4, [(0.5, [prop(P.map_pins(1), CX, 640, 900)])],
+       base=[prop(P.sign(["EMPTY LOT", "DALLAS, TX"]), 820, 640, 380), K(330, 880, 700, pose="gesture", mouth="smile", lid=0.1)])
+_beats(12, [(0.5, [prop(P.tag("$120", "PER MONTH"), CX, 620, 900), K(CX, 1200, 480, pose="rub", mouth="smile")])],
+       base=[prop(P.container("7"), CX, 700, 860)])
+_beats(14, [(0.45, [prop(P.calc("MONTHLY REVENUE", "$2,400"), 700, 700, 470), K(290, 1000, 600, pose="rub", mouth="grin")])],
+       base=[prop(P.container_grid(4, 5), CX, 600, 900), prop(P.tag("20 x $120", "PER MONTH"), CX, 1020, 640, delay_f=0.3)])
+_beats(16, [(0.62, [K(CX, 860, 760, pose="cross", mouth="smirk", lid=0.45, tilt=4)])],
+       base=[prop(P.icon_toilet(False), 230, 540, 260), prop(P.icon_form(), 540, 540, 260, delay_f=0.12), prop(P.phone(False), 850, 540, 290, delay_f=0.3),
+             X(230, 540, 280, delay_f=0.10), X(540, 540, 280, delay_f=0.22), X(850, 540, 280, delay_f=0.46)])
+_beats(19, [(0.5, [prop(P.nets(4), CX, 620, 820), SB(300, 1040, 380, flip=True)])],
+       base=[prop(P.container("7", door="open"), 740, 780, 640), SB(300, 860, 440, anim="left")])
+_beats(21, [(0.55, [prop(P.clock("MONTHS", face="#fff"), CX, 620, 600), prop(P.stack_papers(6), CX, 1000, 760, delay_f=0.2)])],
+       base=[prop(P.judge_bench(), CX, 620, 900), prop(P.stack_papers(5), 270, 1060, 420, delay_f=0.4)])
+_beats(22, [(0.5, [prop(P.contract(), CX, 700, 760, wiggle=2)])],
+       base=[prop(P.container(color_idx=1), 300, 640, 520), K(760, 900, 700, pose="gesture", mouth="smirk", lid=0.25)])
+_beats(23, [(0.62, [prop(P.envelope("14 DAYS", True, "#ffd9d4", badge="3"), CX, 640, 860), SB(CX, 1080, 360, flip=True)])],
+       base=[prop(P.envelope("", True, "#fff", badge="1"), 190, 560, 330), prop(P.envelope("", True, "#fff", badge="2"), 540, 560, 330, delay_f=0.2),
+             prop(P.envelope("", True, "#ffd9d4", badge="3"), 890, 560, 330, delay_f=0.4)])
+_beats(25, [(0.55, [prop(P.nets(4), CX, 520, 700), prop(P.sold_banner("SOLD $900"), CX, 960, 860, anim="drop")])],
+       base=[K(CX, 700, 640, pose="up", mouth="grin"), prop(P.podium(), CX, 1060, 720)])
+_beats(26, [(0.5, [prop(P.bill_stack(4, "$540 BACK"), CX, 560, 760), SB(CX, 1100, 360)])],
+       base=[prop(P.bill_stack(2, "$360 KEPT"), CX, 540, 760), K(CX, 1190, 500, pose="gesture", mouth="smile")])
+_beats(28, [(0.5, [prop(P.container_grid(2, 3), CX, 640, 900), K(CX, 1160, 380, pose="rub", mouth="grin")])],
+       base=[prop(P.notebook_waitlist(), CX, 700, 560)])
+_beats(30, [(0.4, [prop(P.tag("$19,600", "PER MONTH"), CX, 620, 900), K(CX, 1200, 440, pose="up", mouth="grin", dollar=True)]),
+            (0.72, [prop(P.money_rain(), CX, 560, 1100, anim="drop"), K(CX, 900, 760, pose="up", mouth="grin", dollar=True, delay_f=0.2)])],
+       base=[prop(P.site_blocks(6), CX, 640, 900)])

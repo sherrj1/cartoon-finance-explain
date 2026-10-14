@@ -109,7 +109,8 @@ def cap_img(word, size=104):
     return _caps[key]
 
 
-def frame_at(bg, layers, t, dur, words):
+def frame_at(bg, layers, t, dur, words, ct=None):
+    tc = t if ct is None else ct
     frame = bg.copy()
     for ly in layers:
         d0, u0 = ly.times(dur)
@@ -151,25 +152,37 @@ def frame_at(bg, layers, t, dur, words):
             frame.paste(sh, (int(ly.x + dx - sh.width / 2), int(ly.y + ly.h / 2 - 10)), sh)
         frame.paste(im, (px, py), im)
     # slow push-in
-    z = 1.0 + 0.06 * (t / max(dur, 0.1))
+    z = 1.14 + 0.06 * (t / max(dur, 0.1))
     cw, ch = W / z, H / z
-    x0, y0 = (W - cw) / 2, (H - ch) / 2 + 40
+    x0, y0 = (W - cw) / 2, min(H - ch, (H - ch) / 2 + 40)
     frame = frame.resize((W, H), Image.BILINEAR, box=(x0, y0, x0 + cw, y0 + ch))
     # captions
     cur = None
     for (w0, w1, word) in words:
-        if w0 <= t < w1:
+        if w0 <= tc < w1:
             cur = (w0, word)
-    if cur is None and words and t >= words[-1][0]:
+    if cur is None and words and tc >= words[-1][0]:
         cur = (words[-1][0], words[-1][2])
     if cur:
         ci = cap_img(cur[1])
-        age = t - cur[0]
+        age = tc - cur[0]
         s = 1.0 + 0.22 * max(0, 1 - age / 0.12)
         if s != 1.0:
             ci = ci.resize((int(ci.width * s), int(ci.height * s)), Image.BILINEAR)
         frame.paste(ci, (int(W / 2 - ci.width / 2), int(CAP_Y - ci.height / 2)), ci)
     return frame
+
+
+def frame_scene(sc, bg, t, dur, words):
+    """Picks the active visual beat of a scene (scenes can cut to a 2nd/3rd image mid-narration)."""
+    beats = [(0.0, sc["layers"])] + sc.get("beats", [])
+    idx = max(i for i, (f, _) in enumerate(beats) if t >= f * dur - 1e-6)
+    f0 = beats[idx][0]
+    f1 = beats[idx + 1][0] if idx + 1 < len(beats) else 1.0
+    b = sc.get("beat_bgs", {}).get(idx)
+    if b:
+        bg = bg_image(*b)
+    return frame_at(bg, beats[idx][1], t - f0 * dur, (f1 - f0) * dur, words, ct=t)
 
 
 def render_scene(args):
@@ -196,7 +209,7 @@ def render_scene(args):
     bg = bg_image(sc.get("bg", "day"), sc.get("ground"), sc.get("ground_y", 1080))
     layers = sc["layers"]
     for i in range(n):
-        frame = frame_at(bg, layers, i / FPS, dur, words)
+        frame = frame_scene(sc, bg, i / FPS, dur, words)
         proc.stdin.write(frame.tobytes())
     proc.stdin.close()
     proc.wait()

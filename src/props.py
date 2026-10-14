@@ -252,8 +252,8 @@ def bill_stack(n=3, label=None, w=420):
                   + f'<circle cx="210" cy="{y+28}" r="14" fill="#a5dca5" stroke="#2e6a2e" stroke-width="3"/>' + T(210, y + 36, "$", 22, "#2e6a2e", 900))
         inner += f'<rect x="170" y="{y}" width="80" height="56" fill="#f2b632" opacity="0.9" stroke="{INK}" stroke-width="4"/>' if i == n - 1 else ""
     if label:
-        inner += T(210, 262, label, 44, INK, 900)
-    return S(420, 280, inner)
+        inner += T(210, 316, label, 44, INK, 900)
+    return S(420, 330, inner)
 
 
 def coin_tower(h=7):

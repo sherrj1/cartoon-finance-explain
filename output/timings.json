@@ -1,0 +1,177 @@
+[
+ {
+  "scene": 0,
+  "start": 0.0,
+  "dur": 3.83
+ },
+ {
+  "scene": 1,
+  "start": 3.83,
+  "dur": 2.1
+ },
+ {
+  "scene": 2,
+  "start": 5.93,
+  "dur": 2.27
+ },
+ {
+  "scene": 3,
+  "start": 8.2,
+  "dur": 4.67
+ },
+ {
+  "scene": 4,
+  "start": 12.87,
+  "dur": 5.3
+ },
+ {
+  "scene": 5,
+  "start": 18.17,
+  "dur": 3.8
+ },
+ {
+  "scene": 6,
+  "start": 21.97,
+  "dur": 2.17
+ },
+ {
+  "scene": 7,
+  "start": 24.13,
+  "dur": 2.0
+ },
+ {
+  "scene": 8,
+  "start": 26.13,
+  "dur": 2.13
+ },
+ {
+  "scene": 9,
+  "start": 28.27,
+  "dur": 2.27
+ },
+ {
+  "scene": 10,
+  "start": 30.53,
+  "dur": 1.7
+ },
+ {
+  "scene": 11,
+  "start": 32.23,
+  "dur": 2.97
+ },
+ {
+  "scene": 12,
+  "start": 35.2,
+  "dur": 5.13
+ },
+ {
+  "scene": 13,
+  "start": 40.33,
+  "dur": 2.37
+ },
+ {
+  "scene": 14,
+  "start": 42.7,
+  "dur": 4.97
+ },
+ {
+  "scene": 15,
+  "start": 47.67,
+  "dur": 2.17
+ },
+ {
+  "scene": 16,
+  "start": 49.83,
+  "dur": 4.73
+ },
+ {
+  "scene": 17,
+  "start": 54.57,
+  "dur": 3.83
+ },
+ {
+  "scene": 18,
+  "start": 58.4,
+  "dur": 2.83
+ },
+ {
+  "scene": 19,
+  "start": 61.23,
+  "dur": 5.13
+ },
+ {
+  "scene": 20,
+  "start": 66.37,
+  "dur": 2.7
+ },
+ {
+  "scene": 21,
+  "start": 69.07,
+  "dur": 4.53
+ },
+ {
+  "scene": 22,
+  "start": 73.6,
+  "dur": 5.57
+ },
+ {
+  "scene": 23,
+  "start": 79.17,
+  "dur": 5.67
+ },
+ {
+  "scene": 24,
+  "start": 84.83,
+  "dur": 1.7
+ },
+ {
+  "scene": 25,
+  "start": 86.53,
+  "dur": 4.9
+ },
+ {
+  "scene": 26,
+  "start": 91.43,
+  "dur": 6.83
+ },
+ {
+  "scene": 27,
+  "start": 98.27,
+  "dur": 3.2
+ },
+ {
+  "scene": 28,
+  "start": 101.47,
+  "dur": 4.8
+ },
+ {
+  "scene": 29,
+  "start": 106.27,
+  "dur": 2.23
+ },
+ {
+  "scene": 30,
+  "start": 108.5,
+  "dur": 7.47
+ },
+ {
+  "scene": 31,
+  "start": 115.97,
+  "dur": 3.43
+ },
+ {
+  "scene": 32,
+  "start": 119.4,
+  "dur": 3.17
+ },
+ {
+  "scene": 33,
+  "start": 122.57,
+  "dur": 2.3
+ },
+ {
+  "scene": 34,
+  "start": 124.87,
+  "dur": 2.0
+ }
+]

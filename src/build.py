@@ -114,7 +114,7 @@ def main():
                 continue
             bg = engine.bg_image(sc.get("bg", "day"), sc.get("ground"), sc.get("ground_y", 1080))
             t = min(p["dur"] - 0.05, 1.6)
-            fr = engine.frame_at(bg, sc["layers"], t, p["dur"], p["words"])
+            fr = engine.frame_scene(sc, bg, t, p["dur"], p["words"])
             fr.save(os.path.join(SCRATCH, f"still_{i:02d}.jpg"), quality=85)
             stills.append(fr.resize((270, 480)))
         for s in range(0, len(stills), 12):
