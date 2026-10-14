@@ -1,0 +1,5 @@
+node_modules/
+logs/*.json
+logs/games/
+state/
+*.mp4

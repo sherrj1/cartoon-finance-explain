@@ -1,0 +1,22 @@
+{
+  "name": "flag-plinko",
+  "version": "0.1.0",
+  "description": "Flag Plinko - 3-hour elimination livestream game (vertical 1080x1920)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "flags": "node tools/fetch-flags.js",
+    "calibrate": "node tools/calibrate.js",
+    "sim": "node tools/sim.js",
+    "test": "node tools/test-physics.js && node tools/test-chat.js",
+    "serve": "node server.js",
+    "stream": "node run.js"
+  },
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  },
+  "devDependencies": {
+    "flag-icons": "^7.2.3",
+    "sharp": "^0.33.5"
+  }
+}
