@@ -1,0 +1,96 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>thumbnail</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c" width="1280" height="720"></canvas>
+<script type="module">
+// YouTube thumbnail (1280x720) drawn with the game's own flags.  /src/web/thumbnail.html?v=1  or  ?v=2
+const q = new URLSearchParams(location.search), V = q.get('v') || '1';
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+const W = 1280, H = 720;
+const FONT = (s, w = 900) => `${w} ${s}px Inter, "Arial Black", "Segoe UI", Arial, sans-serif`;
+const load = (c) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = `/assets/flags/${c}.png`; });
+
+function rr(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function outlined(t, x, y, size, fill, stroke = '#05081c', sw = size / 7, align = 'left') {
+  g.font = FONT(size); g.textAlign = align; g.textBaseline = 'alphabetic'; g.lineJoin = 'round';
+  g.lineWidth = sw; g.strokeStyle = stroke; g.strokeText(t, x, y); g.fillStyle = fill; g.fillText(t, x, y);
+}
+function ball(img, x, y, d, tilt = 0) {
+  const r = d / 2;
+  g.save(); g.translate(x, y); g.rotate(tilt);
+  g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = d * 0.18; g.shadowOffsetY = d * 0.08;
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, r + d * 0.035, 0, 7); g.fill();
+  g.shadowColor = 'transparent';
+  g.save(); g.beginPath(); g.arc(0, 0, r, 0, 7); g.clip();
+  const sh = d, sw = img.width * sh / img.height;
+  g.drawImage(img, -sw / 2, -r, sw, sh);
+  const gl = g.createRadialGradient(-r * 0.35, -r * 0.4, 2, -r * 0.2, -r * 0.25, r * 1.25);
+  gl.addColorStop(0, 'rgba(255,255,255,0.5)'); gl.addColorStop(0.5, 'rgba(255,255,255,0)'); gl.addColorStop(1, 'rgba(0,0,0,0.3)');
+  g.fillStyle = gl; g.fillRect(-r, -r, d, d);
+  g.restore();
+  g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = Math.max(2, d * 0.014); g.beginPath(); g.arc(0, 0, r + d * 0.035, 0, 7); g.stroke();
+  g.restore();
+}
+
+const SCENES = {
+  1: { // "197 FLAGS / ONLY ONE SURVIVES"
+    bg: ['#070b24', '#2b0f63'], accent: '#ffd84d', banner: ['#e8143f', '#ff5a2a'],
+    big: '197', mid: 'FLAGS', banner_t: 'ONLY ONE SURVIVES', cta: 'COMMENT YOUR COUNTRY',
+    balls: [['us', 905, 255, 250, -0.12], ['br', 1120, 450, 200, 0.1], ['jp', 800, 520, 150, -0.08], ['de', 1130, 150, 150, 0.2], ['fr', 600, 150, 125, -0.15], ['nl', 940, 590, 150, 0.1],
+      ['it', 800, 80, 115, 0.2], ['gb', 1210, 305, 125, -0.1], ['es', 700, 625, 105, 0.15], ['kr', 1215, 610, 110, -0.2], ['ca', 1010, 55, 95, -0.1], ['ar', 745, 325, 105, 0.12], ['in', 1180, 30, 80, 0.1]],
+  },
+  2: { // "WHO WINS? / 1 OF 197"
+    bg: ['#04141f', '#0b3a52'], accent: '#35e0ff', banner: ['#18c07a', '#0aa0c8'],
+    big: 'WHO', mid: 'WINS?', banner_t: '1 OF 197 FLAGS', cta: 'COMMENT YOUR COUNTRY',
+    balls: [['nl', 910, 250, 255, -0.1], ['de', 1130, 430, 200, 0.1], ['us', 800, 520, 150, 0.1], ['br', 1135, 150, 150, 0.2], ['jp', 600, 150, 125, -0.1], ['gb', 945, 590, 150, 0.1],
+      ['fr', 800, 80, 115, 0.2], ['it', 1210, 305, 125, -0.1], ['ca', 700, 625, 105, 0.15], ['au', 1215, 610, 110, -0.2], ['es', 1010, 55, 95, -0.1], ['kr', 745, 325, 105, 0.12], ['za', 1180, 30, 80, 0.1]],
+  },
+}[V];
+
+const imgs = Object.fromEntries(await Promise.all([...new Set(SCENES.balls.map((b) => b[0]))].map(async (c) => [c, await load(c)])));
+await document.fonts.ready;
+
+// background
+const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, SCENES.bg[0]); bg.addColorStop(1, SCENES.bg[1]);
+g.fillStyle = bg; g.fillRect(0, 0, W, H);
+for (const [x, y, r, c] of [[1000, 300, 520, 'rgba(255,255,255,0.14)'], [250, 560, 460, 'rgba(255,80,120,0.12)'], [650, 60, 380, 'rgba(120,90,255,0.2)']]) {
+  const rg = g.createRadialGradient(x, y, 10, x, y, r); rg.addColorStop(0, c); rg.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = rg; g.fillRect(0, 0, W, H);
+}
+// plinko pegs (full bleed, fading to the left so the text stays readable)
+for (let r = 0; r < 12; r++) for (let k = 0; k < 24; k++) {
+  const x = k * 62 + (r % 2 ? 31 : 0) + 8, y = 40 + r * 52;
+  const a = Math.max(0, Math.min(0.55, (x - 360) / 800));
+  g.fillStyle = `rgba(190,215,255,${a})`; g.beginPath(); g.arc(x, y, 7, 0, 7); g.fill();
+}
+// bins strip along the bottom
+const pattern = 'GGRGGRRGGGRGGRGRGGRG';
+const bw = W / pattern.length;
+for (let i = 0; i < pattern.length; i++) {
+  g.fillStyle = pattern[i] === 'G' ? '#1fcf86' : '#ff3d5f'; g.fillRect(i * bw, H - 46, bw, 46);
+  g.fillStyle = 'rgba(255,255,255,0.85)'; g.fillRect(i * bw - 2, H - 46, 4, 46);
+}
+g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, H - 46, W, 6);
+// balls (back to front)
+for (const [c, x, y, d, t] of SCENES.balls) ball(imgs[c], x, y, d, t);
+
+// text block
+const bigSize = SCENES.big.length > 3 ? 190 : 270;
+outlined(SCENES.big, 52, 292, bigSize, SCENES.accent, '#05081c', 22);
+outlined(SCENES.mid, 58, 414, 150, '#ffffff', '#05081c', 20);
+// banner
+g.save(); g.translate(40, 448); g.rotate(-0.035);
+const bn = g.createLinearGradient(0, 0, 640, 0); bn.addColorStop(0, SCENES.banner[0]); bn.addColorStop(1, SCENES.banner[1]);
+g.shadowColor = 'rgba(0,0,0,0.5)'; g.shadowBlur = 20; g.shadowOffsetY = 8;
+g.fillStyle = bn; rr(0, 0, 640, 96, 16); g.fill(); g.shadowColor = 'transparent';
+g.strokeStyle = '#fff'; g.lineWidth = 5; rr(0, 0, 640, 96, 16); g.stroke();
+g.font = FONT(SCENES.banner_t.length > 16 ? 56 : 66); g.textAlign = 'center'; g.textBaseline = 'middle';
+g.lineWidth = 8; g.strokeStyle = 'rgba(0,0,0,0.45)'; g.strokeText(SCENES.banner_t, 320, 52); g.fillStyle = '#fff'; g.fillText(SCENES.banner_t, 320, 52);
+g.restore();
+// call to action
+outlined(SCENES.cta, 52, 632, 46, SCENES.accent === '#ffd84d' ? '#35e0ff' : '#ffd84d', '#05081c', 9);
+// LIVE badge
+g.fillStyle = '#e8143f'; rr(40, 34, 170, 62, 14); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 4; rr(40, 34, 170, 62, 14); g.stroke();
+g.fillStyle = '#fff'; g.beginPath(); g.arc(78, 65, 11, 0, 7); g.fill();
+g.font = FONT(38); g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('LIVE', 100, 67);
+window.__done = true;
+</script></body></html>
