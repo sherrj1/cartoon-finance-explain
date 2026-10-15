@@ -37,7 +37,19 @@ export class Game {
    * @param {object} o  { seed, countries:[{code,name}], config?, probs?:number[12], resume?:snapshot }
    */
   constructor(o) {
-    this.cfg = { ...DEFAULTS, ...(o.config || {}) };
+    const given = o.config || {};
+    this.cfg = { ...DEFAULTS, ...given };
+    // Short games (< ~2.6 h): use fewer rounds and shorter intro / winner / pause so the schedule still fits.
+    // Anything you set explicitly in `config` wins over these automatic values.
+    if (this.cfg.gameSeconds < 9500) {
+      const g = this.cfg.gameSeconds, cl = (v, a, b) => Math.max(a, Math.min(b, v));
+      const rounds = g <= 2700 ? [4, 4, 3] : g <= 4800 ? [6, 6, 4] : [8, 8, 6];
+      if (!given.phases) this.cfg.phases = DEFAULTS.phases.map((p, i) => ({ ...p, rounds: rounds[i] }));
+      if (given.introSeconds == null) this.cfg.introSeconds = cl(Math.round(g * 0.025), 20, 240);
+      if (given.cooldownSeconds == null) this.cfg.cooldownSeconds = cl(Math.round(g * 0.03), 30, 300);
+      if (given.winnerSeconds == null) this.cfg.winnerSeconds = cl(Math.round(g * 0.01), 15, 30);
+      if (given.minRoundSeconds == null) this.cfg.minRoundSeconds = g <= 2700 ? 55 : 80;
+    }
     this.countries = o.countries;
     this.byCode = new Map(this.countries.map((c) => [c.code, c]));
     this.seed = o.seed >>> 0;

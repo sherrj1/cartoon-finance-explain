@@ -16,6 +16,7 @@ export async function runGame(seed, opts = {}) {
   const countries = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/countries.json'), 'utf8'));
   const probs = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/bin-probs.json'), 'utf8')).probs;
   const game = new Game({ seed, countries, probs, config: opts.config });
+  const startPause = game.cfg.winnerSeconds;
   let maxBalls = 0, ticks = 0;
   const t0 = Date.now();
   while (game.mode !== 'winner' && game.T < 3600 * 4) {
@@ -45,7 +46,7 @@ if (isMainThread) {
       if (next >= games) { if (!active) resolve(); return; }
       const s = seed0 + next++;
       active++;
-      const w = new Worker(fileURLToPath(import.meta.url), { workerData: { seed: s } });
+      const w = new Worker(fileURLToPath(import.meta.url), { workerData: { seed: s, minutes: +arg('--minutes', 0) } });
       w.on('message', (r) => { results.push(r); process.stdout.write(`  game seed ${r.seed}: ${r.minutes.toFixed(2)} min, ${r.rounds} rounds, ${r.replays} replays, winner ${r.winner}, nudges ${r.nudges}, forced ${r.forced}, ${r.wallSec.toFixed(0)}s wall\n`); });
       w.on('exit', () => { active--; launch(); if (!active && next >= games) resolve(); });
       w.on('error', (e) => { console.error(e); process.exit(1); });
@@ -54,11 +55,12 @@ if (isMainThread) {
   });
   results.sort((a, b) => a.seed - b.seed);
   const mins = results.map((r) => r.minutes);
-  const ok = results.filter((r) => r.minutes >= 175 && r.minutes <= 185);
+  const target = +arg('--minutes', 180), tol = target >= 120 ? 5 : Math.max(1.5, target * 0.06);
+  const ok = results.filter((r) => r.minutes >= target - tol && r.minutes <= target + tol);
   const sum = (a) => a.reduce((x, y) => x + y, 0);
   console.log(`\n=== ${results.length} games in ${((Date.now() - t0) / 1000).toFixed(0)}s wall ===`);
   console.log(`duration  min ${Math.min(...mins).toFixed(2)}  mean ${(sum(mins) / mins.length).toFixed(2)}  max ${Math.max(...mins).toFixed(2)} minutes`);
-  console.log(`within 175-185 min: ${ok.length}/${results.length}`);
+  console.log(`within ${target - tol}-${target + tol} min (target ${target}): ${ok.length}/${results.length}`);
   console.log(`rounds    min ${Math.min(...results.map((r) => r.rounds))}  max ${Math.max(...results.map((r) => r.rounds))}   replays total ${sum(results.map((r) => r.replays))}`);
   console.log(`stuck     nudges ${sum(results.map((r) => r.nudges))}  forced landings ${sum(results.map((r) => r.forced))}   slowest fall ${Math.max(...results.map((r) => r.maxFall)).toFixed(1)}s   max balls on board ${Math.max(...results.map((r) => r.maxBalls))}`);
   const winners = new Map(); for (const r of results) winners.set(r.winner, (winners.get(r.winner) || 0) + 1);
@@ -69,6 +71,6 @@ if (isMainThread) {
   console.log(pass ? 'PASS' : 'FAIL');
   process.exit(pass ? 0 : 1);
 } else {
-  const r = await runGame(workerData.seed);
+  const r = await runGame(workerData.seed, { config: workerData.minutes ? { gameSeconds: workerData.minutes * 60 } : undefined });
   parentPort.postMessage(r);
 }

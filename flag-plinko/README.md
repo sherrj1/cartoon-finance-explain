@@ -109,6 +109,13 @@ Set `chat.enabled`, `chat.videoId` (or `liveChatId`) and `chat.apiKey` (or an OA
 default project quota is 10,000 units/day; the poller waits >= 10 s between calls (about 5,400 units for one 3 h stream), so several streams a day
 need a quota increase. Test without YouTube: `node tools/mock-chat.js` while a game is running (open the page with `?chat=1`).
 
+## Shorter games (20-30 minutes)
+Set `"gameMinutes": 25` in `config.local.json` (restart `node server.js`, refresh the OBS Browser source) and every game lasts about that long, then a new one with a new seed
+starts automatically. Games under ~2.6 h automatically use fewer rounds (30 min: 4+4+3 elimination rounds + 3 finale rounds), a shorter intro (2.5% of the game),
+shorter winner screen (<= 30 s) and a shorter pause before the next game (3% of the game). Measured over 50 simulated games each:
+20 min -> 19.62-20.01, 25 min -> 24.62-25.03, 30 min -> 29.61-29.99 minutes, 0 forced landings. Test it: `node tools/sim.js --games 50 --minutes 25`,
+or look at it in the browser: `http://localhost:8080/?game=25`.
+
 ## Tests
 
 ```bash
