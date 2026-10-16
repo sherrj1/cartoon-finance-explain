@@ -2,11 +2,16 @@
 import { BOARD, BOARD_X, BOARD_Y, BIN_POINTS } from '../shared/board.js';
 import { buildBoard } from '../shared/board.js';
 
+// Phone-safe layout. On a phone the YouTube app covers the top ~330 px (status bar, channel name, bell, "Claim XP") and the
+// live chat covers everything below ~y 1490, and a 9:19.5 screen crops ~50 px off both sides. So everything that matters lives
+// in x 70..1010, y 330..1440; the board is the 1000x1020 physics board drawn at scale S; the flag grid is ambient decoration.
 export const LAYOUT = {
   W: 1080, H: 1920,
-  stripY: 1314, stripH: 60,
-  gridX: 40, gridY: 1386, cellW: 50, cellH: 44, cols: 20, rows: 10,
-  tickY: 1832, tickH: 44,
+  S: 0.9, OX: 54, OY: 152,                 // board group: design coords (BOARD_X, BOARD_Y, strip, overlays) -> screen
+  statY: 330, statH: 62, statX: 70, statW: 300, statGap: 20,
+  stripY: 1314, stripH: 64,
+  gridX: 80, gridY: 1452, gs: 0.92, cellW: 50, cellH: 44, cols: 20, rows: 10,
+  tickX: 70, tickW: 940, tickY: 1398, tickH: 40,
   wmY: 1884,
 };
 const F = (size, weight = 800) => `${weight} ${size}px Inter, "Segoe UI", Arial, Helvetica, sans-serif`;
@@ -65,12 +70,12 @@ export class Renderer {
     g.strokeStyle = 'rgba(0,0,0,0.55)'; g.lineWidth = 1.5; g.beginPath(); g.arc(S / 2, S / 2, R + 2.5, 0, 7); g.stroke();
     this.ball.set(c.code, b);
     // name pill
-    let size = 16; const m = canvas(10, 10).getContext('2d');
+    let size = 18; const m = canvas(10, 10).getContext('2d');
     m.font = F(size, 800); let w = m.measureText(c.name).width;
-    while (w > 150 && size > 10) { size--; m.font = F(size, 800); w = m.measureText(c.name).width; }
-    const p = canvas(Math.ceil(w) + 14, 22), pg = p.getContext('2d');
-    pg.fillStyle = 'rgba(5,8,25,0.72)'; rr(pg, 0, 0, p.width, 22, 11); pg.fill();
-    pg.font = F(size, 800); pg.textAlign = 'center'; pg.textBaseline = 'middle'; pg.fillStyle = '#fff'; pg.fillText(c.name, p.width / 2, 12);
+    while (w > 160 && size > 11) { size--; m.font = F(size, 800); w = m.measureText(c.name).width; }
+    const p = canvas(Math.ceil(w) + 16, 25), pg = p.getContext('2d');
+    pg.fillStyle = 'rgba(5,8,25,0.75)'; rr(pg, 0, 0, p.width, 25, 12.5); pg.fill();
+    pg.font = F(size, 800); pg.textAlign = 'center'; pg.textBaseline = 'middle'; pg.fillStyle = '#fff'; pg.fillText(c.name, p.width / 2, 13.5);
     this.pill.set(c.code, p);
     // grid cell (colour + greyed-out)
     const cw = 42, ch = 32;
@@ -97,9 +102,9 @@ export class Renderer {
       g.fillStyle = rg; g.fillRect(0, 0, L.W, L.H);
     }
     // header cards
-    g.fillStyle = 'rgba(255,255,255,0.06)'; rr(g, 40, 80, 1000, 108, 24); g.fill();
-    for (let i = 0; i < 3; i++) { g.fillStyle = 'rgba(255,255,255,0.07)'; rr(g, 40 + i * 340, 200, 320, 66, 18); g.fill(); }
+    for (let i = 0; i < 3; i++) { g.fillStyle = 'rgba(255,255,255,0.07)'; rr(g, L.statX + i * (L.statW + L.statGap), L.statY, L.statW, L.statH, 18); g.fill(); }
     // board
+    g.save(); g.translate(L.OX, L.OY); g.scale(L.S, L.S);
     g.save(); g.shadowColor = 'rgba(58,91,255,0.55)'; g.shadowBlur = 30;
     g.fillStyle = C.panel; rr(g, BOARD_X - 8, BOARD_Y - 8, BOARD.W + 16, BOARD.H + 16, 28); g.fill(); g.restore();
     g.strokeStyle = C.line; g.lineWidth = 3; rr(g, BOARD_X - 8, BOARD_Y - 8, BOARD.W + 16, BOARD.H + 16, 28); g.stroke();
@@ -125,9 +130,10 @@ export class Renderer {
       g.fillStyle = pg; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill();
     }
     g.restore();
-    // bin strip + grid + ticker backgrounds
-    g.fillStyle = 'rgba(255,255,255,0.05)'; rr(g, 40, L.gridY - 6, 1000, L.rows * L.cellH + 12, 18); g.fill();
-    g.fillStyle = 'rgba(255,77,109,0.18)'; rr(g, 40, L.tickY, 1000, L.tickH, 14); g.fill();
+    g.restore();
+    // grid + ticker backgrounds
+    g.fillStyle = 'rgba(255,255,255,0.05)'; rr(g, L.gridX - 8, L.gridY - 6, 1000 * L.gs + 16, L.rows * L.cellH * L.gs + 12, 16); g.fill();
+    g.fillStyle = 'rgba(255,77,109,0.18)'; rr(g, L.tickX, L.tickY, L.tickW, L.tickH, 14); g.fill();
     return cv;
   }
 
@@ -136,37 +142,40 @@ export class Renderer {
     const g = this.g, L = LAYOUT;
     g.drawImage(this.static, 0, 0);
     this._header(g, game);
+    g.save(); g.translate(L.OX, L.OY); g.scale(L.S, L.S);
     this._board(g, game, ui);
     this._strip(g, game);
+    g.restore();
     if (game.inFinale && game.round && game.mode !== 'winner' && game.mode !== 'cooldown') this._scoreboard(g, game);
-    else this._grid(g, game, ui);
-    this._ticker(g, game, ui);
+    else { this._grid(g, game, ui); this._ticker(g, game, ui); }
     this._footer(g, game, ui);
+    g.save(); g.translate(L.OX, L.OY); g.scale(L.S, L.S);
     this._overlays(g, game, ui);
+    g.restore();
     if (ui.confetti?.length) this._confetti(g, ui);
   }
 
   _header(g, game) {
-    const cfg = this.cfg;
+    const cfg = this.cfg, L = LAYOUT;
     const title = cfg.channelName || 'FLAG PLINKO';
     const tg = g.createLinearGradient(240, 0, 840, 0); tg.addColorStop(0, C.cyan); tg.addColorStop(0.5, '#ffffff'); tg.addColorStop(1, C.gold);
-    txt(g, title, 540, 42, 58, tg, { stroke: 'rgba(0,0,0,0.5)', strokeW: 8 });
+    txt(g, title, 540, 132, 54, tg, { stroke: 'rgba(0,0,0,0.5)', strokeW: 8 });
     let label = 'GAME ENDS IN', value = hms(game.remaining), col = C.text;
     if (game.mode === 'intro') { label = 'GAME STARTS IN'; value = mmss(game.cfg.introSeconds - game.T); col = C.cyan; }
     else if (game.mode === 'winner' || game.mode === 'cooldown') { label = 'NEXT GAME IN'; value = mmss(game.mode === 'winner' ? game.cfg.cooldownSeconds : game.modeEnd - game.T); col = C.gold; }
-    txt(g, label, 540, 103, 24, C.dim, { weight: 700 });
-    txt(g, value, 540, 152, 78, col, { stroke: 'rgba(0,0,0,0.45)', strokeW: 8 });
+    txt(g, label, 540, 252, 22, C.dim, { weight: 700 });
+    txt(g, value, 540, 294, 58, col, { stroke: 'rgba(0,0,0,0.45)', strokeW: 8 });
     const R = game.round;
     const cards = [
-      ['ROUND', game.mode === 'intro' ? '-' : String(game.roundNo) + (R && R.attempt > 1 ? `  (replay ${R.attempt - 1})` : ''), game.phase ? game.phase.name : game.inFinale ? 'FINALE' : ''],
+      ['ROUND', game.mode === 'intro' ? '-' : String(game.roundNo) + (R && R.attempt > 1 ? ` (replay ${R.attempt - 1})` : ''), game.phase ? game.phase.name : game.inFinale ? 'FINALE' : ''],
       ['FLAGS LEFT', String(game.alive.length), ''],
       [game.inFinale ? 'ELIMINATING' : 'MUST GO', R && game.mode !== 'intro' ? String(R.mustGo) : '-', ''],
     ];
     cards.forEach(([lab, val, sub], i) => {
-      const x = 40 + i * 340 + 160;
-      txt(g, lab, x, 217, 18, C.dim, { weight: 700 });
-      txt(g, val, x, 247, 38, i === 2 ? C.red : i === 1 ? C.cyan : C.text, { stroke: 'rgba(0,0,0,0.4)', strokeW: 5 });
-      if (sub) txt(g, sub, x + 150, 217, 15, C.gold, { weight: 800, align: 'right' });
+      const x0 = L.statX + i * (L.statW + L.statGap), x = x0 + L.statW / 2;
+      txt(g, lab, x, L.statY + 17, 17, C.dim, { weight: 700 });
+      txt(g, val, x, L.statY + 43, 34, i === 2 ? C.red : i === 1 ? C.cyan : C.text, { stroke: 'rgba(0,0,0,0.4)', strokeW: 5 });
+      if (sub) txt(g, sub, x0 + L.statW - 14, L.statY + 17, 15, C.gold, { weight: 800, align: 'right' });
     });
   }
 
@@ -245,8 +254,8 @@ export class Renderer {
         else { fill = 'rgba(255,77,109,0.30)'; label = 'OUT'; col = C.red; }
       }
       g.fillStyle = fill; rr(g, x + 2, L.stripY, bw - 4, L.stripH, 10); g.fill();
-      if (label) txt(g, label, x + bw / 2, L.stripY + 17, 19, col, { stroke: 'rgba(0,0,0,0.5)', strokeW: 4 });
-      if (show) txt(g, String(R.bins[i].count), x + bw / 2, L.stripY + 42, 26, C.text, { stroke: 'rgba(0,0,0,0.5)', strokeW: 5 });
+      if (label) txt(g, label, x + bw / 2, L.stripY + 18, 22, col, { stroke: 'rgba(0,0,0,0.5)', strokeW: 4 });
+      if (show) txt(g, String(R.bins[i].count), x + bw / 2, L.stripY + 46, 30, C.text, { stroke: 'rgba(0,0,0,0.5)', strokeW: 5 });
     }
   }
 
@@ -269,15 +278,15 @@ export class Renderer {
         else if (safeNow.has(code)) { gg.strokeStyle = 'rgba(47,227,154,0.95)'; gg.lineWidth = 2.5; rr(gg, cx + 2, cy + 2, 42, 32, 5); gg.stroke(); }
       });
     }
-    g.drawImage(this.gridCv, L.gridX, L.gridY);
+    g.drawImage(this.gridCv, L.gridX, L.gridY, this.gridCv.width * L.gs, this.gridCv.height * L.gs);
     // chat highlights on the grid
     const hl = ui.chat?.hl;
     if (hl) for (const [code, h] of hl) {
       if (h.until <= ui.now) continue;
       const i = this.cellOf.get(code);
-      const x = L.gridX + (i % L.cols) * L.cellW + 3, y = L.gridY + Math.floor(i / L.cols) * L.cellH + 4;
+      const x = L.gridX + ((i % L.cols) * L.cellW + 3) * L.gs, y = L.gridY + (Math.floor(i / L.cols) * L.cellH + 4) * L.gs;
       const pulse = 0.5 + 0.5 * Math.sin(ui.now / 130);
-      g.strokeStyle = `rgba(255,216,77,${0.6 + 0.4 * pulse})`; g.lineWidth = 3; rr(g, x - 1, y - 1, 46, 36, 7); g.stroke();
+      g.strokeStyle = `rgba(255,216,77,${0.6 + 0.4 * pulse})`; g.lineWidth = 3; rr(g, x - 1, y - 1, 46 * L.gs, 36 * L.gs, 7); g.stroke();
     }
   }
 
@@ -287,9 +296,11 @@ export class Renderer {
     const max = Math.max(1, ...list.map((c) => game.scores[c] || 0));
     const min = Math.min(...list.map((c) => game.scores[c] || 0));
     const rowH = Math.min(100, (L.rows * L.cellH) / Math.max(2, list.length));
-    txt(g, 'FINALE  ·  LOWEST SCORE GOES OUT', 540, L.gridY + 8, 22, C.gold, { weight: 800 });
+    const y0 = L.tickY, gs = L.gs;
+    g.save(); g.translate(L.gridX - 40 * gs, y0 * (1 - gs)); g.scale(gs, gs);
+    txt(g, 'FINALE  ·  LOWEST SCORE GOES OUT', 540, y0 + 8, 22, C.gold, { weight: 800 });
     list.forEach((code, i) => {
-      const y = L.gridY + 28 + i * rowH;
+      const y = y0 + 28 + i * rowH;
       const c = game.byCode.get(code);
       const sc = game.scores[code] || 0;
       const lowest = sc === min && game.mode !== 'banner';
@@ -303,6 +314,7 @@ export class Renderer {
       txt(g, String(sc), 900, y + (rowH - 8) / 2, 44, lowest ? C.red : C.text, { align: 'right', stroke: 'rgba(0,0,0,0.4)', strokeW: 6 });
       txt(g, `${R.balls?.[code] ?? 0}/${R.K} balls`, 1010, y + (rowH - 8) / 2 + 22, 15, C.dim, { align: 'right', weight: 700 });
     });
+    g.restore();
   }
 
   _ticker(g, game, ui) {
@@ -324,16 +336,16 @@ export class Renderer {
       });
       this.tickerCv = cv;
     }
-    g.save(); g.beginPath(); rr(g, 40, L.tickY, 1000, L.tickH, 14); g.clip();
-    txt(g, game.recent.length ? '' : 'NO ELIMINATIONS YET', 540, L.tickY + L.tickH / 2, 22, C.dim);
+    g.save(); g.beginPath(); rr(g, L.tickX, L.tickY, L.tickW, L.tickH, 14); g.clip();
+    txt(g, game.recent.length ? '' : 'NO ELIMINATIONS YET', 540 + 50, L.tickY + L.tickH / 2, 22, C.dim);
     if (this.tickerCv && this.tickerCv.width > 1) {
       const w = this.tickerCv.width;
       const off = (ui.now / 1000 * 70) % w;
-      for (let x = 150 - off; x < 1040; x += w) g.drawImage(this.tickerCv, x, L.tickY);
-      if (w < 1000) for (let x = 150 - off - w; x > -w; x -= w) g.drawImage(this.tickerCv, x, L.tickY);
+      for (let x = L.tickX + 110 - off; x < L.tickX + L.tickW; x += w) g.drawImage(this.tickerCv, x, L.tickY);
+      if (w < L.tickW) for (let x = L.tickX + 110 - off - w; x > -w; x -= w) g.drawImage(this.tickerCv, x, L.tickY);
     }
-    g.fillStyle = C.red; rr(g, 40, L.tickY, 108, L.tickH, 14); g.fill();
-    txt(g, 'OUT', 94, L.tickY + L.tickH / 2 + 1, 24, '#fff');
+    g.fillStyle = C.red; rr(g, L.tickX, L.tickY, 100, L.tickH, 14); g.fill();
+    txt(g, 'OUT', L.tickX + 50, L.tickY + L.tickH / 2 + 1, 24, '#fff');
     g.restore();
   }
 
@@ -348,12 +360,12 @@ export class Renderer {
     const L = LAYOUT;
     const top = ui.chat?.top;
     const hasTop = top && top.length;
-    const [wm, wms] = this._fit(g, this.cfg.watermark || '', hasTop ? 500 : 1000, 22, 700);
-    txt(g, wm, 40, L.wmY + 14, wms, C.dim, { align: 'left', weight: 700 });
+    const [wm, wms] = this._fit(g, this.cfg.watermark || '', hasTop ? 470 : 940, 22, 700);
+    txt(g, wm, hasTop ? 70 : 540, L.wmY + 14, wms, C.dim, { align: hasTop ? 'left' : 'center', weight: 700 });
     if (hasTop) {
       const t = top[0];
-      const [st, ss] = this._fit(g, `★ MOST SUPPORTED: ${game.byCode.get(t.code).name.toUpperCase()} (${t.n})`, 490, 22);
-      txt(g, st, 1040, L.wmY + 14, ss, C.gold, { align: 'right' });
+      const [st, ss] = this._fit(g, `★ MOST SUPPORTED: ${game.byCode.get(t.code).name.toUpperCase()} (${t.n})`, 460, 22);
+      txt(g, st, 1010, L.wmY + 14, ss, C.gold, { align: 'right' });
     }
   }
 
