@@ -120,7 +120,7 @@ starts automatically. Games under ~33 minutes run in **hectic mode**: 3+3+2 elim
 balls released in quick succession (never more than 6 s between waves, 2.5 s in the finale) and round lengths proportional to the time available,
 so every round takes about the same ~50-60 s instead of a few big rounds and a long, slow finale. Intro (20 s), winner screen (15-30 s) and pause (30 s+) are shortened too.
 Measured over 50 simulated games each (minutes: min-max, longest time with an empty board):
-10 min -> 9.4-11.9 (1 s), 12 min -> 11.7-12.7 (1 s), 15 min -> 14.7-15.1 (1 s), 25 min -> 24.7-25.3 (1 s); 0 forced landings. Before this change a 25-minute game had up to 20 s of dead air.
+10 min -> 9.7-11.9 (1 s), 12 min -> 11.7-12.7 (1 s), 15 min -> 14.7-15.1 (1 s), 25 min -> 24.7-25.3 (1 s); 0 forced landings. Before this change a 25-minute game had up to 20 s of dead air.
 Test it: `node tools/sim.js --games 50 --minutes 12`, `node tools/fast-browser.js 5 50 12` (one full game in the real page), or `http://localhost:8080/?game=12`.
 12 minutes is the sweet spot; 10 is very tight (about 1 game in 200 runs over by a minute or more).
 
