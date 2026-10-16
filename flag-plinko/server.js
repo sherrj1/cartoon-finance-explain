@@ -20,15 +20,20 @@ export function loadConfig() {
   return cfg;
 }
 
-export function startServer({ port } = {}) {
+export function startServer({ port, stateDir } = {}) {
   const cfg = loadConfig();
   const PORT = port ?? +(process.env.PORT || cfg.port || 8080);
-  const STATE = path.join(ROOT, 'state');
+  const STATE = stateDir || path.join(ROOT, 'state');
   const LOGS = path.join(ROOT, 'logs');
   fs.mkdirSync(STATE, { recursive: true }); fs.mkdirSync(LOGS, { recursive: true });
   const clients = new Set();
   const broadcast = (evt) => { const msg = `data: ${JSON.stringify(evt)}\n\n`; for (const r of clients) r.write(msg); };
   const chat = startChat(cfg, broadcast);
+
+  // hall of fame: wins per country, persisted across games and restarts (state/wins.json)
+  const WINS = path.join(STATE, 'wins.json');
+  const readWins = () => { try { const j = JSON.parse(fs.readFileSync(WINS, 'utf8')); return { wins: j.wins || {}, recent: j.recent || [], games: j.games || 0 }; } catch { return { wins: {}, recent: [], games: 0 }; } };
+  const withWin = (s, code) => ({ wins: { ...s.wins, [code]: (s.wins[code] || 0) + 1 }, recent: [code, ...s.recent].slice(0, 12), games: s.games + 1 });
 
   const send = (res, code, body, type = 'application/json') => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store' }); res.end(body); };
   const readBody = (req) => new Promise((ok) => { let b = ''; req.on('data', (d) => (b += d)); req.on('end', () => ok(b)); });
@@ -41,6 +46,7 @@ export function startServer({ port } = {}) {
         const { stream, chat: ch, ...pub } = cfg;                // never expose keys to the page
         return send(res, 200, JSON.stringify({ ...pub, chat: { enabled: !!ch.enabled, highlightSeconds: ch.highlightSeconds } }));
       }
+      if (p === '/api/wins') return send(res, 200, JSON.stringify(readWins()));
       if (p === '/api/newseed') return send(res, 200, JSON.stringify({ seed: randomSeed() }));
       if (p === '/api/state' && req.method === 'GET') {
         const f = path.join(STATE, 'current.json');
@@ -53,7 +59,14 @@ export function startServer({ port } = {}) {
         const j = JSON.parse(body);
         fs.writeFileSync(path.join(LOGS, `game-${j.seed}-${Date.now()}.json`), JSON.stringify(j, null, 1));
         fs.rmSync(path.join(STATE, 'current.json'), { force: true });
-        return send(res, 200, '{}');
+        // official games are counted in the hall of fame; test games (?seed, ?speed, ?game ...) only get a preview of the result
+        let out = {};
+        if (j.winner) {
+          const next = withWin(readWins(), j.winner);
+          if (j.official !== false) fs.writeFileSync(WINS, JSON.stringify(next));
+          out = { ...next, winner: { code: j.winner, n: next.wins[j.winner] }, counted: j.official !== false };
+        }
+        return send(res, 200, JSON.stringify(out));
       }
       if (p === '/api/events') {
         res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });

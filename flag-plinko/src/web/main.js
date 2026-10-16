@@ -37,7 +37,10 @@ async function boot() {
   sfx.init();
 
   const speed = +(q.get('speed') || 1);
-  const ui = { flashes: [], confetti: [], now: performance.now(), toast: null, chat: { hl: new Map(), counts: new Map(), top: [], sig: 0 } };
+  const ui = { flashes: [], confetti: [], now: performance.now(), toast: null, hof: null, chat: { hl: new Map(), counts: new Map(), top: [], sig: 0 } };
+  // hall of fame (wins per country, kept by the server); only normal games (no test parameters) are counted
+  const official = !['seed', 'speed', 'game', 'intro', 'winner', 'cooldown', 'bench'].some((k) => q.has(k));
+  json('/api/wins').then((h) => { if (h && !ui.hof) ui.hof = h; }).catch(() => {});
   window.__ui = ui;
   const fast = () => speed > 4;
 
@@ -64,7 +67,8 @@ async function boot() {
     console.log('[summary] ' + JSON.stringify(window.__summary));
     if (!fast()) sfx.winner(); else sfx.cfg.enabled = false;
     for (let i = 0; i < 240; i++) ui.confetti.push({ x: Math.random() * 1080, y: -Math.random() * 900, vx: (Math.random() - 0.5) * 160, vy: 120 + Math.random() * 260, w: 8 + Math.random() * 10, h: 14 + Math.random() * 12, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 8, color: ['#ffd84d', '#35e0ff', '#ff4d6d', '#2fe39a', '#ffffff', '#b07bff'][i % 6] });
-    fetch('/api/log', { method: 'POST', body: JSON.stringify({ ...log, finishedAt: Date.now(), countries: countries.length }) }).catch(() => {});
+    fetch('/api/log', { method: 'POST', body: JSON.stringify({ ...log, finishedAt: Date.now(), countries: countries.length, official }) })
+      .then((r) => r.json()).then((h) => { if (h && h.wins) ui.hof = h; }).catch(() => {});
   });
   game.on('restart', () => { if (q.get('once')) { window.__finished = true; return; } location.href = `/?${new URLSearchParams([...q.entries()].filter(([k]) => !['seed', 'resume'].includes(k)))}`; });
 

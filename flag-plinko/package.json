@@ -8,7 +8,7 @@
     "flags": "node tools/fetch-flags.js",
     "calibrate": "node tools/calibrate.js",
     "sim": "node tools/sim.js",
-    "test": "node tools/test-physics.js && node tools/test-chat.js",
+    "test": "node tools/test-physics.js && node tools/test-chat.js && node tools/test-wins.js",
     "serve": "node server.js",
     "stream": "node run.js"
   },

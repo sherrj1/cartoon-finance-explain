@@ -101,6 +101,11 @@ or cron (`deploy/crontab.example`), or run it as a service (`deploy/flagplinko.s
 so slots 3 h 15 min apart never overlap. You still have to create/bind a YouTube broadcast for each slot (stream key reuse: in YouTube Studio
 create a *reusable* stream key and schedule the broadcasts, or enable "Enable auto-start/auto-stop").
 
+## Hall of fame
+The server counts every winner in `state/wins.json` (git-ignored, survives restarts). The winner screen shows "WIN #3" and a top-5 **Hall of Fame**,
+and the intro of every game shows the last three winners and the country with the most wins (`docs/hall-of-fame.png`). Only normal games are counted:
+a page opened with test parameters (`?seed`, `?speed`, `?game`, `?intro` ...) shows a preview but is never saved. To reset the counters delete `state/wins.json`.
+
 ## Chat (YouTube Live Chat API)
 Viewers type a country name, an alias (`holland`, `usa`, `south korea`), a flag emoji, or - on its own - a 2-letter code (`NL`).
 Longest match wins (`north korea` before `korea`). The country's ball (if it is on the board) gets a gold ring and the viewer's name for 10 s,
@@ -119,7 +124,7 @@ or look at it in the browser: `http://localhost:8080/?game=25`.
 ## Tests
 
 ```bash
-npm test                                       # physics/game + chat tests
+npm test                                       # physics/game + chat + hall-of-fame tests
 node tools/calibrate.js --n 20000 --write      # fall times, bin probabilities (writes data/bin-probs.json), 200-ball burst, stuck check
 node tools/sim.js --games 50                   # 50 complete 3-hour games in a few seconds; checks 175-185 min, nudges, forced landings
 node tools/fast-browser.js 1 50                # one full game in the real page at ?speed=50

@@ -385,6 +385,7 @@ export class Renderer {
       txt(g, 'Land in a green bin to stay alive', cx, BOARD_Y + 310, 32, C.green, { weight: 700 });
       txt(g, 'Land in a red bin and you are out', cx, BOARD_Y + 356, 32, C.red, { weight: 700 });
       txt(g, 'COMMENT YOUR COUNTRY!', cx, BOARD_Y + 450, 46, C.cyan, { stroke: 'rgba(0,0,0,0.5)' });
+      this._recentWinners(g, game, ui.hof);
       return;
     }
     if (!R) return;
@@ -434,16 +435,20 @@ export class Renderer {
     } else if (game.mode === 'winner' || game.mode === 'cooldown') {
       const code = game.winner;
       const c = game.byCode.get(code);
-      g.save(); g.fillStyle = 'rgba(5,8,25,0.86)'; rr(g, BOARD_X, BOARD_Y, BOARD.W, BOARD.H, 20); g.fill();
-      txt(g, 'WINNER', cx, BOARD_Y + 150, 120, C.gold, { stroke: 'rgba(0,0,0,0.6)', strokeW: 14 });
+      const hof = ui.hof;
+      g.save(); g.fillStyle = 'rgba(5,8,25,0.88)'; rr(g, BOARD_X, BOARD_Y, BOARD.W, BOARD.H, 20); g.fill();
+      txt(g, 'WINNER', cx, BOARD_Y + 82, 100, C.gold, { stroke: 'rgba(0,0,0,0.6)', strokeW: 12 });
       const img = this.assets.imgs.get(code);
       const pulse = 1 + Math.sin(ui.now / 300) * 0.015;
-      const w = 640 * pulse, h = w * 0.75;
-      g.shadowColor = 'rgba(255,216,77,0.7)'; g.shadowBlur = 50;
-      g.drawImage(img, cx - w / 2, BOARD_Y + 270, w, h);
-      g.shadowBlur = 0; g.strokeStyle = '#fff'; g.lineWidth = 8; g.strokeRect(cx - w / 2, BOARD_Y + 270, w, h);
-      txt(g, c.name.toUpperCase(), cx, BOARD_Y + 270 + h + 100, 78, C.text, { stroke: 'rgba(0,0,0,0.6)', strokeW: 12 });
-      txt(g, `after ${hms(game.log.durationSeconds || game.T)}`, cx, BOARD_Y + 270 + h + 180, 34, C.dim, { weight: 700 });
+      const w = 400 * pulse, h = w * 0.75, fy = BOARD_Y + 150;
+      g.shadowColor = 'rgba(255,216,77,0.7)'; g.shadowBlur = 40;
+      g.drawImage(img, cx - w / 2, fy, w, h);
+      g.shadowBlur = 0; g.strokeStyle = '#fff'; g.lineWidth = 7; g.strokeRect(cx - w / 2, fy, w, h);
+      txt(g, c.name.toUpperCase(), cx, BOARD_Y + 505, 68, C.text, { stroke: 'rgba(0,0,0,0.6)', strokeW: 10 });
+      const n = hof?.winner?.code === code ? hof.winner.n : 0;
+      const sub = (n ? (n === 1 ? 'FIRST WIN  ·  ' : `WIN #${n}  ·  `) : '') + `after ${hms(game.log.durationSeconds || game.T)}`;
+      txt(g, sub, cx, BOARD_Y + 566, 34, n ? C.gold : C.dim, { weight: 800 });
+      if (hof) this._hallOfFame(g, game, hof, 604, code);
       g.restore();
     }
     // replay / elimination flash message
@@ -454,6 +459,44 @@ export class Renderer {
       txt(g, ui.toast.text, cx, BOARD_Y + 545, 38, ui.toast.color || C.gold, { stroke: 'rgba(0,0,0,0.5)' });
       g.restore();
     }
+  }
+
+  // top 5 countries by number of wins (over all games ever streamed)
+  _hallOfFame(g, game, hof, y, hilite) {
+    const list = Object.entries(hof.wins).filter(([code]) => game.byCode.has(code))
+      .sort((a, b) => b[1] - a[1] || (a[0] === hilite ? -1 : b[0] === hilite ? 1 : 0)).slice(0, 5);
+    if (!list.length) return;
+    g.fillStyle = 'rgba(255,255,255,0.06)'; rr(g, BOARD_X + 60, BOARD_Y + y, 880, 410, 24); g.fill();
+    txt(g, 'HALL OF FAME', BOARD_X + 500, BOARD_Y + y + 38, 34, C.gold, { stroke: 'rgba(0,0,0,0.5)' });
+    list.forEach(([code, wins], i) => {
+      const ry = BOARD_Y + y + 78 + i * 64;
+      if (code === hilite) { g.fillStyle = 'rgba(255,216,77,0.16)'; rr(g, BOARD_X + 80, ry - 4, 840, 58, 14); g.fill(); }
+      txt(g, String(i + 1), BOARD_X + 120, ry + 25, 32, i === 0 ? C.gold : C.dim, { align: 'center' });
+      g.drawImage(this.ball.get(code), BOARD_X + 160, ry + 2, 46, 46);
+      const [nm, sz] = this._fit(g, game.byCode.get(code).name, 470, 32, 800);
+      txt(g, nm, BOARD_X + 226, ry + 26, sz, C.text, { align: 'left' });
+      txt(g, `${wins} ${wins === 1 ? 'WIN' : 'WINS'}`, BOARD_X + 900, ry + 26, 32, C.gold, { align: 'right' });
+    });
+  }
+
+  // intro: the last three winners and the country with the most wins
+  _recentWinners(g, game, hof) {
+    if (!hof || !hof.recent.length) return;
+    const cx = BOARD_X + BOARD.W / 2;
+    const rec = hof.recent.filter((c) => game.byCode.has(c)).slice(0, 3);
+    if (!rec.length) return;
+    this._card(g, 575, 330);
+    txt(g, 'RECENT WINNERS', cx, BOARD_Y + 612, 30, C.gold, { stroke: 'rgba(0,0,0,0.5)' });
+    rec.forEach((code, i) => {
+      const x = cx + (i - (rec.length - 1) / 2) * 290;
+      const img = this.assets.imgs.get(code);
+      g.drawImage(img, x - 75, BOARD_Y + 640, 150, 112);
+      g.strokeStyle = '#fff'; g.lineWidth = 3; g.strokeRect(x - 75, BOARD_Y + 640, 150, 112);
+      const [nm, sz] = this._fit(g, game.byCode.get(code).name.toUpperCase(), 270, 26, 800);
+      txt(g, nm, x, BOARD_Y + 780, sz, C.text);
+    });
+    const best = Object.entries(hof.wins).filter(([c]) => game.byCode.has(c)).sort((a, b) => b[1] - a[1])[0];
+    if (best && best[1] > 1) txt(g, `MOST WINS: ${game.byCode.get(best[0]).name.toUpperCase()}  x${best[1]}`, cx, BOARD_Y + 862, 28, C.cyan, { stroke: 'rgba(0,0,0,0.5)' });
   }
 
   _confetti(g, ui) {

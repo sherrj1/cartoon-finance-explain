@@ -1,13 +1,17 @@
 // Layout check: renders the real page at 1080x1920 in headless Chrome and saves screenshots of every screen.
 //   node tools/screenshot.js [outdir]
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { launch } from './browser.js';
 import { startServer } from '../server.js';
 
 const out = process.argv[2] || 'shots';
 fs.mkdirSync(out, { recursive: true });
-const srv = await startServer({ port: 8099 });
+// sample hall of fame so the intro / winner screens have something to show
+const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fp-shots-'));
+fs.writeFileSync(path.join(stateDir, 'wins.json'), JSON.stringify({ wins: { ye: 10, jp: 7, br: 5, nl: 4, ie: 2, de: 1 }, recent: ['ye', 'jp', 'ye', 'br', 'nl'], games: 29 }));
+const srv = await startServer({ port: 8099, stateDir });
 const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
 const errors = [];
