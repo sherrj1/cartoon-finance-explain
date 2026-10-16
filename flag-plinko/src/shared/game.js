@@ -43,12 +43,28 @@ export class Game {
     // Anything you set explicitly in `config` wins over these automatic values.
     if (this.cfg.gameSeconds < 9500) {
       const g = this.cfg.gameSeconds, cl = (v, a, b) => Math.max(a, Math.min(b, v));
-      const rounds = g <= 2700 ? [4, 4, 3] : g <= 4800 ? [6, 6, 4] : [8, 8, 6];
+      const rounds = g <= 1200 ? [3, 3, 2] : g <= 2700 ? [4, 4, 3] : g <= 4800 ? [6, 6, 4] : [8, 8, 6];
       if (!given.phases) this.cfg.phases = DEFAULTS.phases.map((p, i) => ({ ...p, rounds: rounds[i] }));
       if (given.introSeconds == null) this.cfg.introSeconds = cl(Math.round(g * 0.025), 20, 240);
       if (given.cooldownSeconds == null) this.cfg.cooldownSeconds = cl(Math.round(g * 0.03), 30, 300);
       if (given.winnerSeconds == null) this.cfg.winnerSeconds = cl(Math.round(g * 0.01), 15, 30);
-      if (given.minRoundSeconds == null) this.cfg.minRoundSeconds = g <= 2700 ? 55 : 80;
+      if (given.minRoundSeconds == null) this.cfg.minRoundSeconds = g <= 1200 ? 40 : g <= 2700 ? 55 : 80;
+      // Hectic mode (< ~33 min): short banners / result screens, balls are released in quick succession so the board is never empty
+      if (g < 2000) {
+        const set = (k, v) => { if (given[k] == null) this.cfg[k] = v; };
+        set('bannerSeconds', g <= 1200 ? 7 : 8); set('resultsSeconds', g <= 1200 ? 9 : 12);
+        set('waveInterval', 3); set('maxDropInterval', 6); set('finaleDropInterval', 2.5); set('settleReserve', 12);
+        // nominal round lengths proportional to the time that is really available, so the governor does not have to squeeze (pace ~ 1)
+        if (!given.phases && given.finaleMinutes == null) {
+          const wt = [1.0, 0.85, 0.8], fw = 0.7;
+          const total = this.cfg.phases.reduce((a, ph, i) => a + ph.rounds * wt[i], 0) + 3 * fw;
+          const k = (g - this.cfg.introSeconds - 10) / 60 / total;
+          this.cfg.phases = this.cfg.phases.map((ph, i) => ({ ...ph, minutes: wt[i] * k }));
+          this.cfg.finaleMinutes = fw * k;
+        }
+        // a phase is also finished when its planned rounds are used up and the flag count is only a little above the target
+        if (given.phaseTolerance == null) this.cfg.phaseTolerance = 1.25;
+      }
     }
     this.countries = o.countries;
     this.byCode = new Map(this.countries.map((c) => [c.code, c]));
@@ -180,7 +196,9 @@ export class Game {
   // ------------------------------------------------------------------ round lifecycle
   _advancePhase() {
     // skip phases that are already satisfied; move on when the planned rounds are used up and the target is reached
-    while (!this.inFinale && this.alive.length <= this.phase.end) { this.phaseIdx++; this.roundInPhase = 0; }
+    const tol = this.cfg.phaseTolerance || 1;
+    while (!this.inFinale && (this.alive.length <= this.phase.end ||
+      (this.phase.end >= 16 && this.roundInPhase >= this.phase.rounds && this.alive.length <= Math.ceil(this.phase.end * tol)))) { this.phaseIdx++; this.roundInPhase = 0; }
   }
 
   _beginRound(isReplay = false, tied = null) {
@@ -199,8 +217,8 @@ export class Game {
     const participants = tied ? tied.slice() : this.alive.slice();
     const R = { no: this.roundNo, attempt: this.attempt, finale, phase: finale ? 4 : this.phase.id, phaseName: finale ? 'FINALE' : this.phase.name,
                 n: participants.length, participants, startT: this.T, budget: plan.budget, pace: plan.pace, tie: !!tied };
-    const banner = plan.budget < 150 ? 10 : c.bannerSeconds;
-    const results = plan.budget < 150 ? 10 : c.resultsSeconds;
+    const banner = plan.budget < 150 ? Math.min(10, c.bannerSeconds) : c.bannerSeconds;
+    const results = plan.budget < 150 ? Math.min(10, c.resultsSeconds) : c.resultsSeconds;
     const window = Math.max(8, plan.budget - banner - results - c.settleReserve);
     R.bannerEnd = this.T + banner;
     R.resultsLen = results;

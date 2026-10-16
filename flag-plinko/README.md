@@ -114,12 +114,15 @@ Set `chat.enabled`, `chat.videoId` (or `liveChatId`) and `chat.apiKey` (or an OA
 default project quota is 10,000 units/day; the poller waits >= 10 s between calls (about 5,400 units for one 3 h stream), so several streams a day
 need a quota increase. Test without YouTube: `node tools/mock-chat.js` while a game is running (open the page with `?chat=1`).
 
-## Shorter games (20-30 minutes)
-Set `"gameMinutes": 25` in `config.local.json` (restart `node server.js`, refresh the OBS Browser source) and every game lasts about that long, then a new one with a new seed
-starts automatically. Games under ~2.6 h automatically use fewer rounds (30 min: 4+4+3 elimination rounds + 3 finale rounds), a shorter intro (2.5% of the game),
-shorter winner screen (<= 30 s) and a shorter pause before the next game (3% of the game). Measured over 50 simulated games each:
-20 min -> 19.62-20.01, 25 min -> 24.62-25.03, 30 min -> 29.61-29.99 minutes, 0 forced landings. Test it: `node tools/sim.js --games 50 --minutes 25`,
-or look at it in the browser: `http://localhost:8080/?game=25`.
+## Short, hectic games (10-30 minutes)
+Set `"gameMinutes": 12` in `config.local.json` (restart `node server.js`, refresh the OBS Browser source) and every game lasts about that long, then a new one with a new seed
+starts automatically. Games under ~33 minutes run in **hectic mode**: 3+3+2 elimination rounds and 3 finale rounds (12 min), short banners and result screens (7-9 s),
+balls released in quick succession (never more than 6 s between waves, 2.5 s in the finale) and round lengths proportional to the time available,
+so every round takes about the same ~50-60 s instead of a few big rounds and a long, slow finale. Intro (20 s), winner screen (15-30 s) and pause (30 s+) are shortened too.
+Measured over 50 simulated games each (minutes: min-max, longest time with an empty board):
+10 min -> 9.4-11.9 (1 s), 12 min -> 11.7-12.7 (1 s), 15 min -> 14.7-15.1 (1 s), 25 min -> 24.7-25.3 (1 s); 0 forced landings. Before this change a 25-minute game had up to 20 s of dead air.
+Test it: `node tools/sim.js --games 50 --minutes 12`, `node tools/fast-browser.js 5 50 12` (one full game in the real page), or `http://localhost:8080/?game=12`.
+12 minutes is the sweet spot; 10 is very tight (about 1 game in 200 runs over by a minute or more).
 
 ## Tests
 

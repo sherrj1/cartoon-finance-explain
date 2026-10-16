@@ -17,18 +17,24 @@ export async function runGame(seed, opts = {}) {
   const probs = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/bin-probs.json'), 'utf8')).probs;
   const game = new Game({ seed, countries, probs, config: opts.config });
   const startPause = game.cfg.winnerSeconds;
-  let maxBalls = 0, ticks = 0;
+  let maxBalls = 0, ticks = 0, idle = 0, idleMax = 0, idleTotal = 0, dropTime = 0;
   const t0 = Date.now();
   while (game.mode !== 'winner' && game.T < 3600 * 4) {
     game.tick(); ticks++;
-    if (game.world.balls.length > maxBalls) maxBalls = game.world.balls.length;
+    const nb = game.world.balls.length;
+    if (nb > maxBalls) maxBalls = nb;
+    // "dead air": time during a round's drop phase with nothing falling on the board
+    if (game.mode === 'drop' || game.mode === 'settle') {
+      dropTime += 1 / 60;
+      if (nb === 0) { idle += 1 / 60; idleTotal += 1 / 60; if (idle > idleMax) idleMax = idle; } else idle = 0;
+    } else idle = 0;
   }
   const log = game.log;
   const rounds = log.rounds.filter((r) => !r.replay);
   return {
     seed, winner: game.winner, minutes: game.T / 60, rounds: rounds.length, replays: log.replays,
     nudges: game.world.stats.nudges + game.world.stats.progressNudges, forced: game.world.stats.forced,
-    maxFall: game.world.stats.maxFall, maxBalls, wallSec: (Date.now() - t0) / 1000, log,
+    maxFall: game.world.stats.maxFall, maxBalls, idleMax, idlePct: dropTime ? (100 * idleTotal) / dropTime : 0, wallSec: (Date.now() - t0) / 1000, log,
     phaseSurvivors: rounds.map((r) => r.survivors),
   };
 }
@@ -64,6 +70,7 @@ if (isMainThread) {
   console.log(`rounds    min ${Math.min(...results.map((r) => r.rounds))}  max ${Math.max(...results.map((r) => r.rounds))}   replays total ${sum(results.map((r) => r.replays))}`);
   console.log(`stuck     nudges ${sum(results.map((r) => r.nudges))}  forced landings ${sum(results.map((r) => r.forced))}   slowest fall ${Math.max(...results.map((r) => r.maxFall)).toFixed(1)}s   max balls on board ${Math.max(...results.map((r) => r.maxBalls))}`);
   const winners = new Map(); for (const r of results) winners.set(r.winner, (winners.get(r.winner) || 0) + 1);
+  console.log(`dead air  longest empty-board wait ${Math.max(...results.map((r) => r.idleMax)).toFixed(1)}s (mean of per-game max ${(sum(results.map((r) => r.idleMax)) / results.length).toFixed(1)}s), ${(sum(results.map((r) => r.idlePct)) / results.length).toFixed(1)}% of drop time empty`);
   console.log(`winners   ${results.length} games, ${winners.size} different countries`);
   if (has('--verbose')) for (const r of results[0].log.rounds) console.log(JSON.stringify(r));
   if (arg('--json')) fs.writeFileSync(arg('--json'), JSON.stringify(results.map(({ log, ...r }) => r), null, 1));
